@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use pyHECTR in your research, please cite this software and the associated paper when available."
+title: "pyHECTR"
+type: software
+abstract: "Python tools for reciprocal-space reconstruction, detector-space crystal truncation rod mask preparation, and rocking-scan integration of high-energy surface X-ray diffraction data."
+authors:
+  - family-names: "Batraev"
+    given-names: "Radik"
+repository-code: "https://github.com/batradiik/pyHECTR"
+url: "https://github.com/batradiik/pyHECTR"
+license: "GPL-2.0-or-later"
+version: "0.1.0"
+keywords:
+  - "X-ray diffraction"
+  - "surface X-ray diffraction"
+  - "crystal truncation rods"
+  - "reciprocal space"
+  - "rocking scans"
+  - "detector geometry"
+  - "high index single crystals"
+  - "polycrystalline Materials"
+
+
