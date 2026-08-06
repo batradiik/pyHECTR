@@ -52,7 +52,7 @@ def are_collinear(a, b, tolerance=1e-8):
 
 def peak_dict_to_records(peak_data):
     """
-    Convert a peak-data dictionary into a list of row records.
+    Convert a peak data dictionary into a list of row records.
 
     Parameters
     ----------

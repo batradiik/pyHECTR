@@ -1,0 +1,16 @@
+version: 2
+
+build:
+  os: Red Hat Enterprise Linux, 9.8
+  tools:
+    python: "3.11.7"
+
+sphinx:
+  configuration: docs/source/conf.py
+  fail_on_warning: false
+
+python:
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

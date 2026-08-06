@@ -52,14 +52,13 @@ def are_collinear(a, b, tolerance=1e-8):
 
 def peak_dict_to_records(peak_data):
     """
-    Convert a peak-data dictionary into a list of row records.
+    Convert a peak data dictionary into a list of row records.
 
     Parameters
     ----------
     peak_data : dict
-        Dictionary containing peak information. The current implementation
+        Dictionary containing peak information. The implementation
         expects the following keys:
-
         - ``'x'`` : plotted x-coordinates.
         - ``'y'`` : plotted y-coordinates.
         - ``'hkl'`` : Miller indices for each peak.
@@ -92,7 +91,7 @@ def peak_dict_to_records(peak_data):
 def filter_peaks_in_plot_range(peak_data, xlim=(-5,5), ylim=(-0.1,7.8)):
     """
     Keep only the peaks whose (x,y) = (qy, qz) are inside the bounding box.
-    Filter peak-data arrays by plotted x/y limits.
+    Filter peak data arrays by plotted x/y limits.
 
     Parameters
     ----------
