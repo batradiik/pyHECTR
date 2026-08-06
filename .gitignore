@@ -23,6 +23,7 @@ docs/build/
 venv/
 env/
 ENV/
+.venv-wheel-test/
 
 # Testing / linting / type checking caches
 .pytest_cache/
