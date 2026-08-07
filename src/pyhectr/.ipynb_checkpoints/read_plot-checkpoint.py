@@ -647,7 +647,6 @@ def rod_create_nested_folders(dir_n, path=".", gamma_check=False, return_paths=F
     -------
     paths : dict or None
         If `return_paths=True`, a dictionary with the created paths:
-
         - ``'base'``
         - ``'after_correction'``
         - ``'before_correction'``

@@ -100,9 +100,9 @@ def filter_peaks_in_plot_range(peak_data, xlim=(-5,5), ylim=(-0.1,7.8)):
         in the dictionary are converted to NumPy arrays and filtered with the
         same boolean mask.
     xlim : tuple of float, default (-5, 5)
-        Inclusive lower and upper limits for the plotted x-coordinate.
+        Lower and upper limits for the plotted x-coordinate.
     ylim : tuple of float, default (-0.1, 7.8)
-        Inclusive lower and upper limits for the plotted y-coordinate.
+        Lower and upper limits for the plotted y-coordinate.
 
     Returns
     -------
@@ -473,7 +473,7 @@ def brute_force_hk_symmetry_search(
     hk_families = None,
 ):
     """
-    Brute-force over symmetry-equivalent hk labels for each rod.
+    Brute force over symmetry equivalent hk labels for each rod.
     Search over candidate HK assignments for several rods.
 
     For each combination of candidate ``(h, k)`` labels, the function builds a
@@ -505,7 +505,7 @@ def brute_force_hk_symmetry_search(
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
+        Direct beam detector center in pixel coordinates.
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
@@ -609,7 +609,6 @@ def scan_theta(theta_grid, rods, keep_frac, omes_ang,
         Theta value from `theta_grid` with the lowest cost.
     costs : ndarray
         Cost value for each theta value in `theta_grid`.
-
     """
     
     costs = np.array([
@@ -1030,7 +1029,6 @@ def get_allowed_hkl_custom(qmax, lattice):
     is_centro = lattice.iscentrosymmetric
 
     for (h, k, l) in hkl_candidates:
-        # If we have already tested this reflection (or its equivalents), skip
         if (h, k, l) in tested:
             continue
 
@@ -1105,13 +1103,13 @@ def fast_StructureFactorForQ(qs, en0='config', temp=0, threshold=1e-3,
 
     
     Parameters:
-      qs            : array-like (N x 3) q-vectors.
-      en0           : energy value or 'config' (if so, utilities.energy(config.ENERGY) is used)
-      temp          : temperature (0 assumes zero temperature)
-      threshold     : minimum intensity threshold for early rejection.
-      lattice       : lattice object (provides nsites, base(), GetPoint(), B)
+      qs             : array-like (N x 3) q-vectors.
+      en0            : energy value or 'config' (if so, utilities.energy(config.ENERGY) is used)
+      temp           : temperature (0 assumes zero temperature)
+      threshold      : minimum intensity threshold for early rejection.
+      lattice        : lattice object (provides nsites, base(), GetPoint(), B)
       debyewallerFunc: function for Debye–Waller calculations (e.g. lattice._debyewallerfactor)
-      get_f_func    : function to compute form factors (e.g. lattice._get_f)
+      get_f_func     : function to compute form factors (e.g. lattice._get_f)
     
     Returns:
       A NumPy array (length N) of complex structure factors.
@@ -1119,7 +1117,6 @@ def fast_StructureFactorForQ(qs, en0='config', temp=0, threshold=1e-3,
     qs = np.asarray(qs, dtype=np.double)
     qnorm = np.linalg.norm(qs, axis=1)
     if isinstance(en0, str) and en0 == 'config':
-        # Assumes utilities and config are available in the environment.
         # en0 = utilities.energy(config.ENERGY)
         en0 = _resolve_xray_energy(en0)
     if lattice.nsites == 0:
@@ -1210,19 +1207,15 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
             If provided, discard peaks with relative intensity below this value
             after structure-factor calculation.
         sf_threshold : float or None, default None
-            Threshold passed to :func:`fast_StructureFactorForQ` and also used to
+            Threshold passed to `fast_StructureFactorForQ` and also used to
             filter relative intensities inside the nested peak-generation helper
             when not None.
         q_max : float, optional
-            Explicit reciprocal-space cutoff. If provided, it overrides the q-limit
+            Reciprocal-space cutoff. If provided, it overrides the q-limit
             calculated from `ttmax`.
         **kwargs
             Additional keyword arguments passed to ``Axes.scatter``.
 
-    
-    Returns:
-      (ax, scatter_handle, peak_data) where peak_data is a dictionary containing plotted coordinates.
-    
     Returns
     -------
     ax : matplotlib.axes.Axes
@@ -1232,12 +1225,12 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
     peak_data : dict
         Dictionary containing plotted peak data:
 
-        - ``'x'`` : plotted x-coordinates.
-        - ``'y'`` : plotted y-coordinates.
-        - ``'hkl'`` : HKL labels for plotted peaks.
-        - ``'qvec'`` : q-vectors ``(qx, qy, qz)`` for plotted peaks.
+        - ``'x'``      : plotted x-coordinates.
+        - ``'y'``      : plotted y-coordinates.
+        - ``'hkl'``    : HKL labels for plotted peaks.
+        - ``'qvec'``   : q-vectors ``(qx, qy, qz)`` for plotted peaks.
         - ``'angles'`` : angles returned by ``exp.Q2Ang``.
-        - ``'r'`` : relative structure-factor intensities.
+        - ``'r'``      : relative structure-factor intensities.
 
     """
     if ttmax is None:

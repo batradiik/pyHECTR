@@ -155,7 +155,6 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
     q_z_min = np.nanmin(q_z_map)
     q_z_max = np.nanmax(q_z_map)
 
-    # choose a regular q-grid step from the exact map
     row0 = np.argmin(np.abs(y))
     col0 = np.argmin(np.abs(x))
 
@@ -173,7 +172,6 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
         tmp = np.abs(np.diff(q_z_map, axis=0))
         dqz = np.nanmedian(tmp[tmp > 0])
 
-    # keep one common dq, like in your original function
     dq = min(dqr, dqz)
 
     q_r = np.arange(np.floor(q_r_min / dq) * dq,
@@ -579,7 +577,6 @@ def make_mask_fast(h, k, h_peak, k_peak, threshold=0.028):
     thr2 = threshold * threshold
 
     for hp, kp in centers:
-        # no sqrt, no temporary ones-mask
         np.logical_or(mask, (h - hp)**2 + (k - kp)**2 <= thr2, out=mask)
 
     return mask
@@ -651,7 +648,6 @@ def generate_dilate(mask,
         Shape of the OpenCV structuring element.
     return_mode : {'dilated', 'ring', 'both'}, default 'dilated'
         Select what to return.
-
         - ``'dilated'``: return the full dilated mask.
         - ``'ring'``: return only the newly added halo/ring.
         - ``'both'``: return ``(dilated, ring)``.
@@ -740,10 +736,10 @@ def grow_or_shrink(mask,
         Dilated / eroded mask, or the rim if *return_ring*.
     """
 
-    # ── 1. clean binary mask ──────────────────────────────────────────────
+    # ── 1. clean binary mask 
     mask_bin = (mask > 0).astype(np.uint8)
 
-    # ── 2. kernel size (always non-negative) ──────────────────────────────
+    # ── 2. kernel size (always non-negative) 
     if metric == 'percent':
         k = int(round(abs(expand) * max(mask.shape)))
     elif metric == 'pixels':
@@ -752,14 +748,14 @@ def grow_or_shrink(mask,
         raise ValueError("metric must be 'percent' or 'pixels'")
     k = max(1, k)                                    # at least 1×1
 
-    # ── 3. structuring element ────────────────────────────────────────────
+    # ── 3. structuring element 
     shapes = {'rect': cv.MORPH_RECT,
               'ellipse': cv.MORPH_ELLIPSE,
               'cross': cv.MORPH_CROSS}
     kernel = cv.getStructuringElement(shapes.get(struct, cv.MORPH_RECT),
                                       (k, k))
 
-    # ── 4. choose operation: dilate ↔ erode ───────────────────────────────
+    # ── 4. choose operation: dilate ↔ erode 
     if expand > 0:
         changed = cv.dilate(mask_bin, kernel)
         rim     = changed - mask_bin          # outer halo

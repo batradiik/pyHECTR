@@ -155,7 +155,6 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
     q_z_min = np.nanmin(q_z_map)
     q_z_max = np.nanmax(q_z_map)
 
-    # choose a regular q-grid step from the exact map
     row0 = np.argmin(np.abs(y))
     col0 = np.argmin(np.abs(x))
 
@@ -173,7 +172,6 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
         tmp = np.abs(np.diff(q_z_map, axis=0))
         dqz = np.nanmedian(tmp[tmp > 0])
 
-    # keep one common dq, like in your original function
     dq = min(dqr, dqz)
 
     q_r = np.arange(np.floor(q_r_min / dq) * dq,

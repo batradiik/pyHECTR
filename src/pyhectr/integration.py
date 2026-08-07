@@ -32,7 +32,6 @@ def _als_baseline(y: np.ndarray,
     baseline : ndarray of shape (n_points,)
         Estimated baseline profile. For input arrays shorter than three
         points, a copy of the input is returned.
-
     """
     
     y = np.asarray(y, dtype=float)
@@ -102,7 +101,6 @@ def line_prof_bckg_subtr(intensities: np.ndarray,
         Raw rocking-curve intensity profile as a function of omega/image index.
     flag : {'median', 'mean', 'medfilt', 'als'}, default 'median'
         Background estimation method.
-
         - ``'median'``: fit a straight line through points below or equal to
           the median intensity.
         - ``'mean'``: fit a straight line through points below or equal to
@@ -266,7 +264,6 @@ def get_omega_range(
         Each row is (omega_index, gamma_pixel, delta_pixel).
     gamma_pxl_range : int
         Number of γ-pixels on the detector (max gamma_pixel + 1).
-        (Kept for API symmetry; we actually infer the γ set from data.)
     plot_flag : bool, default True
         If True, draw histograms for visual inspection.
     sigma_factor : float, default 2.0
@@ -375,10 +372,6 @@ def get_delta_range(pixel_coord_plot, gamma_pxl_range, plot_flag = True, sigma_f
     gammas = pixel_coord_plot[:, 1].astype(int)
     deltas = pixel_coord_plot[:, 2].astype(int)
 
-    # for each gamma pixel, compute max and min delta
-    # but only for gamma indices that actually have hits
-    # we can use bincount to find min/max per gamma
-    # first, collect unique gammas present
     unique_gamma = np.unique(gammas)
     # for each gamma, mask and compute Δ-range
     delta_ranges = []
