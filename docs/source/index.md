@@ -1,17 +1,27 @@
-.. pyHECTR documentation master file, created by
-   sphinx-quickstart on Thu Aug  6 15:13:20 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+# pyHECTR documentation
 
-pyHECTR documentation
-=====================
+`pyHECTR` provides tools for reciprocal-space reconstruction, crystal
+truncation rod localization, detector-space mask preparation, and rocking-scan
+integration of high-energy surface X-ray diffraction data.
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+```{admonition} Project status
+:class: note
 
+pyHECTR is research software under active development. Validate detector
+geometry, correction factors, and integration parameters for each experiment.
+```
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+```{toctree}
+:maxdepth: 2
+:caption: Getting started
 
+getting_started/installation
+getting_started/data_conventions
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: API reference
+
+api/index
+```
