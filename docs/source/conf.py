@@ -57,4 +57,4 @@ html_theme_options = {
 
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
-html_logo = "_static/pyhectr_logo.png"
+html_logo = "_static/pyhectr_logo.svg"
