@@ -44,10 +44,16 @@ exclude_patterns = [
     "**.ipynb_checkpoints",
 ]
 
-html_theme = "pydata_sphinx_theme"
+html_theme = "sphinx_rtd_theme"
 html_static_path = []
 
 html_theme_options = {
-    "github_url": "https://github.com/batradiik/pyHECTR",
-    "show_toc_level": 2,
+    "collapse_navigation": False,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
+
+html_static_path = ["_static"]
+html_logo = "_static/pyhectr_logo.png"
