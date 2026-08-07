@@ -56,3 +56,46 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Sphinx / MyST-NB generated files
+docs/build/
+docs/source/_build/
+docs/source/**/.ipynb_checkpoints/
+docs/build/.jupyter_cache/
+
+# Python caches anywhere in the repository
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Jupyter checkpoints anywhere in the repository
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Local build/test environments
+.venv*/
+venv/
+env/
+ENV/
+
+# Distribution artifacts
+dist/
+build/
+*.egg-info/
+
+# Large local experimental outputs
+data/
+raw_data/
+processed/
+results/
+outputs/
+figures/
+animations/
+*.tif
+*.tiff
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.gif
+*.mp4
