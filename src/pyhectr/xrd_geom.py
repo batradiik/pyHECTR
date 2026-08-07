@@ -704,67 +704,79 @@ def generate_dilate(mask,
     raise ValueError("return_mode must be 'dilated', 'ring', or 'both'.")
 
 
-
-
 def grow_or_shrink(mask,
-                   expand=0.00005,      # >0 grow, <0 shrink
-                   metric='percent',    # 'percent' | 'pixels'
-                   struct='rect',       # 'rect' | 'ellipse' | 'cross'
+                   expand=0.00005,
+                   metric='percent',
+                   struct='rect',
                    return_ring=False):
     """
-    Dilate (grow) or erode (shrink) a binary mask.
+    Dilate or erode a binary mask.
 
     Parameters
     ----------
-    mask : 2-D ndarray
-        Binary mask (non-zeros are the object).
-    expand : float or int
-        +ve  ⇒ grow outward, -ve ⇒ shrink inward.
-        Interpreted as fraction of max(H,W) when *metric* == 'percent',
-        or as absolute pixels when *metric* == 'pixels'.
-    metric : {'percent', 'pixels'}
-        Units of *expand*.
-    struct : {'rect', 'ellipse', 'cross'}
-        Structuring-element shape.
+    mask : ndarray of shape (height, width)
+        Binary mask. Nonzero values are treated as object pixels.
+    expand : float or int, default 0.00005
+        Expansion size. Positive values grow the mask. Negative values shrink
+        the mask. If ``metric='percent'``, the absolute value is interpreted as
+        a fraction of the larger image dimension. If ``metric='pixels'``, the
+        absolute value is interpreted as a number of pixels.
+    metric : {'percent', 'pixels'}, default 'percent'
+        Unit system used for `expand`.
+    struct : {'rect', 'ellipse', 'cross'}, default 'rect'
+        Shape of the OpenCV structuring element.
     return_ring : bool, default False
-        If True, return only the added (or removed) rim as 1s;
-        otherwise return the full dilated / eroded mask.
+        If True, return only the added outer rim for dilation or the removed
+        inner rim for erosion. If False, return the full dilated or eroded mask.
 
     Returns
     -------
-    out : float32 ndarray
-        Dilated / eroded mask, or the rim if *return_ring*.
-    """
+    out : ndarray of float32
+        Dilated or eroded binary mask. If `return_ring` is True, only the
+        changed rim is returned.
 
-    # ── 1. clean binary mask 
+    Raises
+    ------
+    ValueError
+        If `mask` is not two-dimensional, if `metric` is unsupported, or if
+        `struct` is unsupported.
+    """
+    mask = np.asarray(mask)
+
+    if mask.ndim != 2:
+        raise ValueError("mask must be a 2-D array.")
+
     mask_bin = (mask > 0).astype(np.uint8)
 
-    # ── 2. kernel size (always non-negative) 
     if metric == 'percent':
-        k = int(round(abs(expand) * max(mask.shape)))
+        k = int(round(abs(expand) * max(mask.shape[:2])))
     elif metric == 'pixels':
         k = int(round(abs(expand)))
     else:
-        raise ValueError("metric must be 'percent' or 'pixels'")
-    k = max(1, k)                                    # at least 1×1
+        raise ValueError("metric must be 'percent' or 'pixels'.")
 
-    # ── 3. structuring element 
-    shapes = {'rect': cv.MORPH_RECT,
-              'ellipse': cv.MORPH_ELLIPSE,
-              'cross': cv.MORPH_CROSS}
-    kernel = cv.getStructuringElement(shapes.get(struct, cv.MORPH_RECT),
-                                      (k, k))
+    k = max(1, k)
 
-    # ── 4. choose operation: dilate ↔ erode 
+    shapes = {
+        'rect': cv.MORPH_RECT,
+        'ellipse': cv.MORPH_ELLIPSE,
+        'cross': cv.MORPH_CROSS,
+    }
+
+    if struct not in shapes:
+        raise ValueError("struct must be 'rect', 'ellipse', or 'cross'.")
+
+    kernel = cv.getStructuringElement(shapes[struct], (k, k))
+
     if expand > 0:
         changed = cv.dilate(mask_bin, kernel)
-        rim     = changed - mask_bin          # outer halo
+        rim = changed - mask_bin
     elif expand < 0:
         changed = cv.erode(mask_bin, kernel)
-        rim     = mask_bin - changed          # inner rim
-    else:                                     # expand == 0
+        rim = mask_bin - changed
+    else:
         changed = mask_bin
-        rim     = np.zeros_like(mask_bin)
+        rim = np.zeros_like(mask_bin)
 
     return (rim if return_ring else changed).astype(np.float32)
 

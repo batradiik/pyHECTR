@@ -80,42 +80,50 @@ def _als_baseline(y: np.ndarray,
 
 
 
-
 def line_prof_bckg_subtr(intensities: np.ndarray,
                          flag: str = 'median',
                          *,
                          med_kernel: int = 51,
                          als_lambda: float = 1e5,
                          als_p: float = 0.01) -> np.ndarray:
-    
     """
     Estimate the background profile of a one-dimensional rocking curve.
 
     Depending on `flag`, the background is estimated either by fitting a
-    straight line through the lower part of the profile, by applying a median
-    filter, or by using asymmetric least-squares baseline smoothing.
+    straight line through the lower-intensity part of the profile, by applying
+    a median filter, or by using asymmetric least-squares baseline smoothing.
 
     Parameters
     ----------
     intensities : array-like of shape (n_points,)
-        Raw rocking-curve intensity profile as a function of omega/image index.
+        Raw rocking-curve intensity profile as a function of omega or image
+        index.
     flag : {'median', 'mean', 'medfilt', 'als'}, default 'median'
         Background estimation method.
-        - ``'median'``: fit a straight line through points below or equal to
-          the median intensity.
-        - ``'mean'``: fit a straight line through points below or equal to
-          the mean intensity.
-        - ``'medfilt'``: return a median-filtered version of the profile.
-        - ``'als'``: return an asymmetric least-squares baseline.
+
+        ``'median'``
+            Fit a straight line through points below or equal to the median
+            intensity.
+
+        ``'mean'``
+            Fit a straight line through points below or equal to the mean
+            intensity.
+
+        ``'medfilt'``
+            Return a median-filtered version of the profile.
+
+        ``'als'``
+            Return an asymmetric least-squares baseline.
+
     med_kernel : int, default 51
-        Odd median-filter window length used when ``flag='medfilt'``.
-        Must be a positive odd integer.
+        Odd median-filter window length used when ``flag='medfilt'``. Must be
+        a positive odd integer.
     als_lambda : float, default 1e5
-        Smoothness parameter passed to the ALS baseline estimator when
-        ``flag='als'``.
+        Smoothness parameter passed to the asymmetric least-squares baseline
+        estimator when ``flag='als'``.
     als_p : float, default 0.01
-        Asymmetry parameter passed to the ALS baseline estimator when
-        ``flag='als'``.
+        Asymmetry parameter passed to the asymmetric least-squares baseline
+        estimator when ``flag='als'``.
 
     Returns
     -------
@@ -128,6 +136,14 @@ def line_prof_bckg_subtr(intensities: np.ndarray,
         If `med_kernel` is not a positive odd integer, if `intensities` is not
         one-dimensional or is empty, or if `flag` is not one of the supported
         methods.
+
+    Notes
+    -----
+    For ``flag='median'`` and ``flag='mean'``, the function returns the fitted
+    linear background, not the background-subtracted intensity.
+
+    For ``flag='medfilt'`` and ``flag='als'``, the function returns the
+    estimated baseline directly.
     """
     if med_kernel < 1:
         raise ValueError("med_kernel must be positive.")

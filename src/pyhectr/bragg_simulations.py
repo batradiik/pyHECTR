@@ -155,7 +155,7 @@ def plot_peak_data_with_labels(data, ax=None, projection='perpendicular',
         If the input data already provides 'x' and 'y', these are used directly.
     maxqout : float, optional
         If provided and the data contains a 'qx' field, only peaks satisfying
-        |qx| < maxqout will be plotted.
+        ``abs(qx) < maxqout`` will be plotted.
     scalef : float or callable, default 100
         If the data has a field 'r', marker sizes are computed as
         (data['r'] * scalef) or via scalef(val) for each intensity. Otherwise,
@@ -355,8 +355,8 @@ def extract_hk_symmetry_from_table(
     Extract hk symmetry family from the table by matching coordinates.
 
     Default behavior:
-      - if l is None: match by |x| only (same rod family across all L)
-      - if l is given: match by |x| and l (you can also include 'y' if you want)
+      - if l is None: match by ``abs(x)`` only (same rod family across all L)
+      - if l is given: match by ``abs(x)`` and ``l`` (you can also include 'y' if you want)
 
     Parameters
     ----------
@@ -1213,7 +1213,7 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
         q_max : float, optional
             Reciprocal-space cutoff. If provided, it overrides the q-limit
             calculated from `ttmax`.
-        **kwargs
+        kwargs : dict, optional
             Additional keyword arguments passed to ``Axes.scatter``.
 
     Returns
