@@ -2,7 +2,50 @@
 
 Python tools for high-energy crystal truncation rod (CTR) reconstruction, detector-space mask preparation, and rocking scan integration.
 
-`pyHECTR` supports the classical data reduction branch used for high energy grazing-incidence X-ray diffraction (HEGIXRD) measurements with big two dimensional detectors. The package provides utilities for detector geometry, reciprocal space reconstruction, CTR mask generation, and visualization.
+
+`pyHECTR` supports the classical data reduction branch used for high energy grazing-incidence X-ray diffraction (HEGIXRD) measurements with  two dimensional detectors. The package provides utilities for detector geometry, reciprocal space reconstruction, CTR mask generation, and visualization.
+
+
+## Installation
+
+Python 3.10 or newer is recommended.
+
+### Install from PyPI
+
+After the first release is published on PyPI:
+
+```bash
+python -m pip install pyhectr
+```
+
+
+### Install directly from GitHub
+
+Install the latest version from the default branch:
+
+```bash
+python -m pip install "pyhectr @ git+https://github.com/batradiik/pyHECTR.git"
+```
+
+
+### Clone for development
+
+```bash
+git clone https://github.com/batradiik/pyHECTR.git
+cd pyHECTR
+
+python -m venv .venv
+source .venv/bin/activate          # Linux/macOS
+# .venv\Scripts\activate           # Windows PowerShell
+
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+## Documentation 
+
+The documentation for the related package can be find:
+https://pyhectr.readthedocs.io
 
 
 
@@ -23,87 +66,9 @@ Python tools for high-energy crystal truncation rod (CTR) reconstruction, detect
 - `pyhectr.theta0_finder`  
   Conversion of detector pixels to fractional HKL coordinates.
 
-## Installation
-
-Python 3.10 or newer is recommended.
-
-### Install from PyPI
-
-After the first release is published on PyPI:
-
-```bash
-python -m pip install pyhectr
-```
-
-For an optional feature set, after the corresponding extras are defined in `pyproject.toml`:
-
-```bash
-python -m pip install "pyhectr[bragg]"
-python -m pip install "pyhectr[notebooks]"
-```
-
-### Install directly from GitHub
-
-Install the latest version from the default branch:
-
-```bash
-python -m pip install "pyhectr @ git+https://github.com/batradiik/pyHECTR.git"
-```
-
-Install a tagged release, for example `v0.1.0`:
-
-```bash
-python -m pip install "pyhectr @ git+https://github.com/batradiik/pyHECTR.git@v0.1.0"
-```
-
-### Clone for development
-
-```bash
-git clone https://github.com/batradiik/pyHECTR.git
-cd pyHECTR
-
-python -m venv .venv
-source .venv/bin/activate          # Linux/macOS
-# .venv\Scripts\activate           # Windows PowerShell
-
-python -m pip install --upgrade pip
-python -m pip install -e .
-```
-
-To install development and notebook tools after these extras are configured:
-
-```bash
-python -m pip install -e ".[dev,notebooks]"
-```
-
-
-## Example notebooks
-
-The repository contains two end-to-end research notebooks:
-
-- **Sapphire data preparation**  
-  Loads P07 detector data, defines the detector geometry and reciprocal lattice, handles theoretical reflections and azimuthal offset refinement, reconstructs HKL space, detects CTR positions, generates detector-space masks, and prepares saved outputs.
-
-- **Sapphire rod integration**  
-  Loads detector images and masks, constructs reciprocal space grids, prepares individual rods, estimates detector and rocking windows, applies correction maps, integrates the `(2, 2, L)`, `(3, 0, L)`, and `(1, 1, L)` rods, and estimates intensity uncertainties.
-
-The notebooks contain beamline-specific paths and experimental constants. Replace these values with local paths and calibrated parameters before running them.
-
-
-## Input conventions
-
-Unless stated otherwise:
-
-- image stacks have shape `(n_images, n_gamma, n_delta)`;
-- rod coordinates are stored as `(image_index, gamma_pixel, delta_pixel)`;
-- detector angles are expressed in degrees;
-- the wavelength, pixel size, and sample detector distance (SDD) must use mutually consistent units;
-- HKL outputs are fractional reciprocal lattice coordinates and are not automatically rounded to integer Miller indices.
 
 
 ## Dependencies
-
-Core numerical and plotting functionality uses:
 
 - NumPy
 - SciPy
@@ -114,22 +79,11 @@ Core numerical and plotting functionality uses:
 - pandas
 - tqdm
 - xrayutilities
+- seaborn
+- ipython
+- jupyterlab
 
-Notebook examples may additionally require JupyterLab, IPython, and Seaborn.
 
-
-## Documentation
-
-Extended documentation is planned for Read the Docs. The future documentation should include:
-
-- installation and environment setup;
-- detector and angle conventions;
-- reciprocal-space and UB-matrix theory;
-- azimuthal-offset refinement;
-- CTR mask construction;
-- correction factors and rocking-scan integration;
-- full notebook tutorials;
-- API documentation generated from the function docstrings.
 
 
 ## Citation
@@ -138,11 +92,7 @@ If you use `pyHECTR` in research, cite the software using the metadata in `CITAT
 
 A paper citation should be added as the preferred citation after the associated manuscript has been published and assigned a DOI. For archived software releases, a version-specific DOI can also be created through Zenodo.
 
-## License
 
-This project is distributed under the GNU General Public License v2.0 or later (`GPL-2.0-or-later`). See `LICENSE`.
-
-Parts of the Bragg-simulation functionality are adapted from or closely related to `xrayutilities`, which is distributed under `GPL-2.0-or-later`. Preserve the applicable copyright and attribution notices for adapted code.
 
 ## Contributing
 
@@ -154,6 +104,10 @@ Bug reports and focused pull requests are welcome. Before contributing:
 4. run the test and lint checks locally.
 
 
-## Acknowledgments
 
-This project was developed for high-energy surface X-ray diffraction research at DESY PETRA III. The associated work used data recorded at PETRA III beamlines including and was supported by DASHH (the Data Science in Hamburg – Helmholtz Graduate School for the Structure of Matter).
+## License
+
+This project is distributed under the GNU General Public License v2.0 or later (`GPL-2.0-or-later`). See `LICENSE`.
+
+Parts of the Bragg-simulation functionality are adapted from or closely related to `xrayutilities`, which is distributed under `GPL-2.0-or-later`. Preserve the applicable copyright and attribution notices for adapted code.
+

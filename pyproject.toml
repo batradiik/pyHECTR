@@ -29,15 +29,12 @@ dependencies = [
   "opencv-python",
   "xrayutilities",
   "imageio-ffmpeg",
+  "jupyterlab",
+  "ipykernel",
+  "seaborn",
 ]
 
 
-[project.optional-dependencies]
-notebooks = [
-    "jupyterlab",
-    "ipykernel",
-    "seaborn",
-]
 
 [tool.ruff]
 line-length = 110
