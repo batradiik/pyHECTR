@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/source/_static/pyhectr_logo.png" alt="pyHECTR logo" width="260">
+  <img src="docs/source/_static/pyhectr_logo.svg" alt="pyHECTR logo" width="260">
 </p>
 
 # pyHECTR
