@@ -7,7 +7,7 @@ name = "pyhectr"
 version = "0.1.0"
 description = "Tools for high-energy crystal truncation rod extraction and integration from detector images."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 
 license = "GPL-2.0-or-later"
 license-files = [
