@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/source/_static/pyhectr_logo.png" alt="pyHECTR logo" width="260">
+</p>
+
 # pyHECTR
 
 Python tools for high-energy crystal truncation rod (CTR) reconstruction, detector-space mask preparation, and rocking scan integration.
