@@ -102,6 +102,9 @@ python -m pip install -e ".[full,dev]"
 python -m ipykernel install --user --name pyhectr-dev --display-name "pyHECTR dev"
 ```
 
+---
+
+
 ## Documentation 
 
 The documentation for the related package can be find:
@@ -179,41 +182,37 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 
 ---
 
-
-
----
-
 ## Package modules
 
 - `pyhectr.xrd_geom`  
-  Detector angle conversion, reciprocal-space grids, reciprocal-cell and UB matrices, HKL maps, CTR localization, and mask morphology.
+  Detector angle conversion, reciprocal space grids, UB matrices, HKL maps, CTR localization, and mask morphology.
 
 - `pyhectr.integration`  
-  Background estimation, signal-window estimation, correction maps, binary mask preparation, and rocking-scan integration.
+  Background estimation, signal window estimation, correction maps, binary mask preparation, and rocking scan integration.
 
 - `pyhectr.read_plot`  
-  DESY P07 image and metadata loading, plotting utilities, interactive sliders, reciprocal-space interpolation, output-folder creation, and uncertainty estimates.
+  DESY P07 image and metadata loading, plotting utilities, interactive sliders, output folder creation, and uncertainty estimates.
 
 - `pyhectr.bragg_simulations`  
-  Theoretical reflection handling, reciprocal-space peak plotting, symmetry handling, and azimuthal offset scans.
+  Theoretical reflection handling, peak plotting, symmetry handling, and azimuthal offset scans.
 
 - `pyhectr.theta0_finder`  
   Conversion of detector pixels to fractional HKL coordinates.
 
 - `pyhectr.mask_nn`  
-  Optional Detectron2 / Mask R-CNN helper functions for detector-space mask inference and prediction post-processing.
+  Optional Detectron2 / Mask R-CNN helper functions for detector space mask inference and prediction post-processing.
 
 - `pyhectr.ebsd_map`  
-  EBSD orientation-map utilities, footprint selection, and EBSD-to-sample coordinate calibration.
+  EBSD orientation map utilities, footprint selection, and EBSD coordinate calibration.
 
 - `pyhectr.polycrystal`  
-  Utilities for assigning low-index crystallographic directions to EBSD-derived grain orientations.
+  Utilities for assigning low index crystallographic directions to EBSD grain orientations.
 
 - `pyhectr.polyxsim`  
-  Helpers for writing PolyXSim input files from EBSD-derived grain orientations.
+  Helpers for writing PolyXSim input files from EBSD grain orientations.
 
 - `pyhectr.surface`  
-  Surface-cell generation and writing of `.xtl` and `.bul` structure files.
+  Surface cell generation and writing of `.xtl` and `.bul` structure files.
 
 ---
 
@@ -248,6 +247,7 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 - iopath
 - numba
 
+---
 
 
 ## Citation
@@ -256,6 +256,7 @@ If you use `pyHECTR` in research, cite the software using the metadata in `CITAT
 
 A paper citation wikk be added as the preferred citation after the associated manuscript has been published and assigned a DOI. For archived software releases, a version specific DOI can also be created through Zenodo.
 
+---
 
 
 ## Contributing
@@ -267,6 +268,8 @@ Bug reports and focused pull requests are welcome. Before contributing:
 3. update docstrings and documentation where needed;
 4. run the test and lint checks locally.
 
+
+---
 
 
 ## License
