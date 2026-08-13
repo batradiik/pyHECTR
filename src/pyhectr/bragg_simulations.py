@@ -5,7 +5,8 @@ from xrayutilities import utilities
 import matplotlib.pyplot as plt
 import itertools
 from tqdm import tqdm
-
+# in bragg_simulations.py
+from .theta0_finder import pixels_to_hkl_pointwise
 
 def are_perpendicular(a, b, tolerance=1e-8):
     """
@@ -717,75 +718,75 @@ def total_cost(theta0, rods, keep_frac, omes_ang, UBinv, Lambda, x0, y0, pix_siz
 
 
 
-def pixels_to_hkl_pointwise(xpix, ypix, theta_deg, UBinv, Lambda, x0, y0, pix_size, SDD):
-    """
-    Convert detector pixel coordinates to HKL values point by point.
+# def pixels_to_hkl_pointwise(xpix, ypix, theta_deg, UBinv, Lambda, x0, y0, pix_size, SDD):
+#     """
+#     Convert detector pixel coordinates to HKL values point by point.
 
-    The function computes detector angles from pixel coordinates, forms the
-    corresponding scattering vector, rotates it by the effective theta angle,
-    and applies the inverse UB matrix.
+#     The function computes detector angles from pixel coordinates, forms the
+#     corresponding scattering vector, rotates it by the effective theta angle,
+#     and applies the inverse UB matrix.
 
-    Parameters
-    ----------
-    xpix, ypix : array-like or float
-        Detector pixel coordinates. `xpix` corresponds to the delta direction
-        and `ypix` to the gamma direction.
-    theta_deg : array-like or float
-        Sample rotation angle in degrees. Must be broadcast-compatible with
-        `xpix` and `ypix`.
-    UBinv : ndarray of shape (3, 3)
-        Inverse UB matrix.
-    Lambda : float
-        X-ray wavelength. Must be positive.
-    x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
-    pix_size : float
-        Detector pixel size in the same length unit as `SDD`.
-    SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+#     Parameters
+#     ----------
+#     xpix, ypix : array-like or float
+#         Detector pixel coordinates. `xpix` corresponds to the delta direction
+#         and `ypix` to the gamma direction.
+#     theta_deg : array-like or float
+#         Sample rotation angle in degrees. Must be broadcast-compatible with
+#         `xpix` and `ypix`.
+#     UBinv : ndarray of shape (3, 3)
+#         Inverse UB matrix.
+#     Lambda : float
+#         X-ray wavelength. Must be positive.
+#     x0, y0 : float
+#         Direct-beam detector center in pixel coordinates.
+#     pix_size : float
+#         Detector pixel size in the same length unit as `SDD`.
+#     SDD : float
+#         Sample-detector distance in the same length unit as `pix_size`.
 
-    Returns
-    -------
-    h, k, l : ndarray
-        Calculated Miller-index coordinates. Shapes follow NumPy broadcasting
-        of `xpix`, `ypix`, and `theta_deg`.
+#     Returns
+#     -------
+#     h, k, l : ndarray
+#         Calculated Miller-index coordinates. Shapes follow NumPy broadcasting
+#         of `xpix`, `ypix`, and `theta_deg`.
 
-    Raises
-    ------
-    ValueError
-        If `Lambda` is not positive or `UBinv` does not have shape ``(3, 3)``.
-    """
-    # detector angles
-    delta = np.arctan(-(xpix - x0) * pix_size / SDD)
-    gamma = np.arctan(-(ypix - y0) * pix_size / SDD)
-    theta = np.deg2rad(theta_deg)
+#     Raises
+#     ------
+#     ValueError
+#         If `Lambda` is not positive or `UBinv` does not have shape ``(3, 3)``.
+#     """
+#     # detector angles
+#     delta = np.arctan(-(xpix - x0) * pix_size / SDD)
+#     gamma = np.arctan(-(ypix - y0) * pix_size / SDD)
+#     theta = np.deg2rad(theta_deg)
     
-    if Lambda <= 0:
-        raise ValueError("Lambda must be positive.")
+#     if Lambda <= 0:
+#         raise ValueError("Lambda must be positive.")
         
-    k0 = 2 * np.pi / Lambda
+#     k0 = 2 * np.pi / Lambda
 
-    cg, sg = np.cos(gamma), np.sin(gamma)
-    cd, sd = np.cos(delta), np.sin(delta)
-    ct, st = np.cos(theta), np.sin(theta)
+#     cg, sg = np.cos(gamma), np.sin(gamma)
+#     cd, sd = np.cos(delta), np.sin(delta)
+#     ct, st = np.cos(theta), np.sin(theta)
 
-    # q_lab = (Rdelta @ Rgamma - I) @ [0, k0, 0]
-    qx = -k0 * cg * sd
-    qy =  k0 * (cg * cd - 1.0)
-    qz =  k0 * sg
+#     # q_lab = (Rdelta @ Rgamma - I) @ [0, k0, 0]
+#     qx = -k0 * cg * sd
+#     qy =  k0 * (cg * cd - 1.0)
+#     qz =  k0 * sg
 
-    # rotate into sample frame by Rz(-theta)
-    rx =  ct * qx + st * qy
-    ry = -st * qx + ct * qy
-    rz =  qz
+#     # rotate into sample frame by Rz(-theta)
+#     rx =  ct * qx + st * qy
+#     ry = -st * qx + ct * qy
+#     rz =  qz
 
-    q = np.stack([rx, ry, rz], axis=0)   # shape (3, N)
-    UBinv = np.asarray(UBinv, dtype=float)
-    if UBinv.shape != (3, 3):
-        raise ValueError("UBinv must have shape (3, 3).")
-    hkl = UBinv @ q
+#     q = np.stack([rx, ry, rz], axis=0)   # shape (3, N)
+#     UBinv = np.asarray(UBinv, dtype=float)
+#     if UBinv.shape != (3, 3):
+#         raise ValueError("UBinv must have shape (3, 3).")
+#     hkl = UBinv @ q
 
-    return hkl[0], hkl[1], hkl[2]
+#     return hkl[0], hkl[1], hkl[2]
 
 
 def rod_L2(points, hk_target, theta0, omes_ang, UBinv, Lambda, x0, y0, pix_size, SDD,

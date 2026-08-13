@@ -480,53 +480,61 @@ def find_CTR(INT, axNum, height, dist, med_kernel, flag='median'):
         window = 5
         arr = B[peaks[i] - window: peaks[i] + window]
         peaks[i] =  - window + peaks[i] + np.where(arr == np.amax(arr))
+
+    # # in case numpy error, fix   
+    # for i, peak in enumerate(peaks):
+    #     lo = max(0, peak - window)
+    #     hi = min(len(B), peak + window + 1)
+    
+    #     local = B[lo:hi]
+    #     peaks[i] = lo + int(np.argmax(local))
     return peaks
 
 
 
-def mask_generator(h, k, h_peak=None, k_peak=None, threshold=0.009, flag='squared'):
-    """
-    Generate a binary mask around a target position in HK space.
+# def mask_generator(h, k, h_peak=None, k_peak=None, threshold=0.009, flag='squared'):
+#     """
+#     Generate a binary mask around a target position in HK space.
 
-    Parameters
-    ----------
-    h, k : ndarray
-        HK coordinate arrays with matching shapes.
-    h_peak, k_peak : float, optional
-        Target HK coordinates. If one coordinate is None, the corresponding
-        target is treated as zero in the current implementation.
-    threshold : float, default 0.009
-        Distance threshold for including pixels in the mask.
-    flag : {'squared', 'abs'}, default 'squared'
-        Distance mode. ``'squared'`` uses Euclidean distance in HK space.
-        ``'abs'`` uses the current absolute-difference expression.
+#     Parameters
+#     ----------
+#     h, k : ndarray
+#         HK coordinate arrays with matching shapes.
+#     h_peak, k_peak : float, optional
+#         Target HK coordinates. If one coordinate is None, the corresponding
+#         target is treated as zero in the current implementation.
+#     threshold : float, default 0.009
+#         Distance threshold for including pixels in the mask.
+#     flag : {'squared', 'abs'}, default 'squared'
+#         Distance mode. ``'squared'`` uses Euclidean distance in HK space.
+#         ``'abs'`` uses the current absolute-difference expression.
 
-    Returns
-    -------
-    Mask : ndarray
-        Float mask with values 1 inside the threshold and 0 outside.
-    """
-    if flag == 'squared':
-        if (k_peak != None) and (h_peak != None):
-            A = np.sqrt((h-h_peak)**2 + (k-k_peak)**2)
-            Mask = np.ones(np.shape(A))
-            Mask[abs(A) > threshold]=0
-            return Mask
-        elif (k_peak == None) and (h_peak != None):
-            A = np.sqrt((h-h_peak)**2 + (k)**2)
-            Mask = np.ones(np.shape(A))
-            Mask[abs(A) > threshold]=0
-            return Mask
-        elif (k_peak != None) and (h_peak == None):
-            A = np.sqrt((h)**2 + (k-k_peak)**2)
-            Mask = np.ones(np.shape(A))
-            Mask[abs(A) > threshold]=0
-            return Mask
-    if flag == 'abs':
-        A = np.sqrt(abs(h-h_peak) + abs(k-k_peak))
-        Mask = np.ones(np.shape(A))
-        Mask[abs(A) > threshold]=0
-        return Mask
+#     Returns
+#     -------
+#     Mask : ndarray
+#         Float mask with values 1 inside the threshold and 0 outside.
+#     """
+#     if flag == 'squared':
+#         if (k_peak != None) and (h_peak != None):
+#             A = np.sqrt((h-h_peak)**2 + (k-k_peak)**2)
+#             Mask = np.ones(np.shape(A))
+#             Mask[abs(A) > threshold]=0
+#             return Mask
+#         elif (k_peak == None) and (h_peak != None):
+#             A = np.sqrt((h-h_peak)**2 + (k)**2)
+#             Mask = np.ones(np.shape(A))
+#             Mask[abs(A) > threshold]=0
+#             return Mask
+#         elif (k_peak != None) and (h_peak == None):
+#             A = np.sqrt((h)**2 + (k-k_peak)**2)
+#             Mask = np.ones(np.shape(A))
+#             Mask[abs(A) > threshold]=0
+#             return Mask
+#     if flag == 'abs':
+#         A = np.sqrt(abs(h-h_peak) + abs(k-k_peak))
+#         Mask = np.ones(np.shape(A))
+#         Mask[abs(A) > threshold]=0
+#         return Mask
 
 
 def build_centers(h_peak, k_peak):
@@ -581,10 +589,7 @@ def make_mask_fast(h, k, h_peak, k_peak, threshold=0.028):
 
     return mask
 
-
-
-
-def generate_halo(mask, expand_koef=0.005):
+def generate_halo(mask, expand_koef=0.00005):
     """
     Generate an outer halo around a binary mask.
 
@@ -598,39 +603,32 @@ def generate_halo(mask, expand_koef=0.005):
     Returns
     -------
     halo_mask : ndarray of float32
-        Mask containing the added halo region.
+        Mask containing only the added halo region outside the original mask.
     """
-    # Convert the mask to a binary mask
-    mask_binary = np.uint8(mask)
-
-    # Find contours of the mask
+    mask_binary = (np.asarray(mask) > 0).astype(np.uint8)
     contours, _ = cv.findContours(mask_binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    halo_mask = np.zeros_like(mask_binary, dtype=np.float32)
 
-    # Create an empty mask for the halo
-    halo_mask = np.zeros_like(mask, dtype=np.float32)
+    if len(contours) == 0:
+        return halo_mask
 
-    # Iterate over the contours and draw them on the halo mask
     cv.drawContours(halo_mask, contours, -1, 1, thickness=cv.FILLED)
 
-    # Expand the mask by 1%
-    # kernel_size = int(np.round(expand_koef * max(mask.shape[:2])))
-    kernel_size = max(1, int(np.round(expand_koef * max(mask.shape[:2]))))
+    kernel_size = int(np.round(expand_koef * max(mask_binary.shape[:2])))
+    kernel_size = max(1, kernel_size)
     kernel = np.ones((kernel_size, kernel_size), dtype=np.uint8)
-    halo_mask = cv.dilate(halo_mask, kernel)
 
-    # Subtract the original mask from the halo mask
+    halo_mask = cv.dilate(halo_mask, kernel)
     halo_mask = np.subtract(halo_mask, mask_binary)
 
     return halo_mask.astype(np.float32)
-
-
-
 
 def generate_dilate(mask,
                     expand=0.00005,
                     metric='percent',
                     struct='rect',
-                    return_mode='dilated'):
+                    return_mode='dilated',
+                    return_ring=None):
     """
     Dilate a binary mask and choose which output to return.
 
@@ -648,9 +646,10 @@ def generate_dilate(mask,
         Shape of the OpenCV structuring element.
     return_mode : {'dilated', 'ring', 'both'}, default 'dilated'
         Select what to return.
-        - ``'dilated'``: return the full dilated mask.
-        - ``'ring'``: return only the newly added halo/ring.
-        - ``'both'``: return ``(dilated, ring)``.
+    return_ring : bool, optional
+        Backwards alias. If provided, ``True`` is equivalent to 
+        ``return_mode='ring'`` and
+        ``False`` is equivalent to ``return_mode='dilated'``.
 
     Returns
     -------
@@ -664,8 +663,15 @@ def generate_dilate(mask,
     Raises
     ------
     ValueError
-        If `metric`, `struct`, or `return_mode` is unsupported.
+        If `mask`, `metric`, `struct`, or `return_mode` is unsupported.
     """
+    mask = np.asarray(mask)
+    if mask.ndim != 2:
+        raise ValueError("mask must be a 2-D array.")
+
+    if return_ring is not None:
+        return_mode = 'ring' if return_ring else 'dilated'
+
     mask_bin = (mask > 0).astype(np.uint8)
 
     if metric == 'percent':
@@ -702,7 +708,7 @@ def generate_dilate(mask,
         return dilated, ring
 
     raise ValueError("return_mode must be 'dilated', 'ring', or 'both'.")
-
+    
 
 def grow_or_shrink(mask,
                    expand=0.00005,
@@ -779,8 +785,6 @@ def grow_or_shrink(mask,
         rim = np.zeros_like(mask_bin)
 
     return (rim if return_ring else changed).astype(np.float32)
-
-
 
 
 def check_integration(data_im,

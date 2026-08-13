@@ -2,49 +2,69 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+
 [project]
 name = "pyhectr"
-version = "0.1.0"
-description = "Tools for high-energy crystal truncation rod extraction and integration from detector images."
+version = "0.2.0"
+description = "Tools for high-energy crystal truncation rod reconstruction and integration from detector images."
 readme = "README.md"
-requires-python = ">=3.9"
-
+requires-python = ">=3.9,<3.13"
 license = "GPL-2.0-or-later"
-license-files = [
-    "LICENSE",
-    "THIRD_PARTY_NOTICES.md",
-]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 
 authors = [
-  { name = "Radik Batraev" }
+    { name = "Radik Batraev", email = "batraev.rm@gmail.com" },
 ]
+
 dependencies = [
-  "numpy",
-  "scipy",
-  "matplotlib",
-  "pillow",
-  "imageio",
-  "pandas",
-  "tqdm",
-  "opencv-python",
-  "xrayutilities",
-  "imageio-ffmpeg",
-  "jupyterlab",
-  "ipykernel",
-  "seaborn",
+    "numpy>=1.26,<2",
+    "scipy>=1.10,<2",
+    "matplotlib>=3.7",
+    "pillow>=9",
+    "imageio>=2.30",
+    "pandas>=1.5",
+    "tqdm>=4.60",
+    "opencv-python-headless>=4.8,<5",
+    "xrayutilities>=1.7,<2",
+    "jupyterlab>=4.2",
+    "ipykernel>=6.29",
+    "ipympl>=0.9",
 ]
 
 
+[project.optional-dependencies]
 
-[tool.ruff]
-line-length = 110
+# All optional dependencies that can be managed reliably through PyPI.
+# PyTorch, torchvision, and Detectron2 are intentionally installed separately
+# because their correct installation depends on the target CUDA/hardware stack.
+full = [
+    "numba>=0.60,<0.61",
+    "joblib>=1.4,<2",
+    "scikit-image>=0.24,<0.25",
+    "h5py>=3.13,<4",
+    "hdf5plugin>=5.1,<6",
+    "imageio-ffmpeg>=0.6,<0.7",
+    "yacs>=0.1.8",
+    "pycocotools>=2.0.8,<3",
+    "fvcore>=0.1.5,<0.1.6",
+    "iopath>=0.1.7,<0.1.10",
+]
 
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/pyhectr"]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8",
+    "build",
+    "twine",
+]
 
 
 [project.urls]
 Homepage = "https://github.com/batradiik/pyHECTR"
 Repository = "https://github.com/batradiik/pyHECTR"
 Issues = "https://github.com/batradiik/pyHECTR/issues"
+Documentation = "https://pyhectr.readthedocs.io"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyhectr"]

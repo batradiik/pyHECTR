@@ -36,6 +36,8 @@ def _als_baseline(y: np.ndarray,
     
     y = np.asarray(y, dtype=float)
 
+    if n_iter < 1:
+        raise ValueError("n_iter must be >= 1.")
     if y.ndim != 1:
         raise ValueError("ALS baseline expects a 1-D array.")
     if y.size == 0:
@@ -614,13 +616,17 @@ def apply_corrections2D(  delta_arr              : np.ndarray,
 
     Returns
     -------
-    Cmap : ndarray of shape (n_gamma, n_delta)
-        Full two-dimensional correction map. Returned only when
-        ``return_map=True``. Non-finite and non-positive values are replaced
-        by 1 before returning.
-    Cgamma : ndarray of shape (n_gamma,)
-        Gamma-averaged correction vector. Returned only when
-        ``return_map=False``.
+    correction : ndarray
+        Correction factors.
+
+        - If ``return_map=True``, an array of shape
+          ``(n_gamma, n_delta)`` is returned. Non finite or non positive
+          values in this map are replaced by ``1`` before returning.
+
+        - If ``return_map=False``, an array of shape ``(n_gamma,)`` is
+          returned. It contains the delta averaged correction, optionally
+          replaced by values obtained from ``pixel_coord_plot``.
+        
     Raises
     ------
     ValueError

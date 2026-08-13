@@ -542,9 +542,11 @@ def compute_max_pixel_image(path, roix=None, roiy=None):
             img_array = np.array(img_array)
             # Apply ROI if specified
             if roiy is not None and roix is not None:
-                img_array = img_array[roiy, roix][:, ::-1]
+                # img_array = img_array[roiy, roix][:, ::-1]
+                img_array = img_array[roiy, roix]# [:, ::-1]
             if max_image is None:
-                max_image = img_array[:, ::-1]
+                max_image = img_array# [:, ::-1]
+                # max_image = img_array[:, ::-1]
             else:
                 np.maximum(max_image, img_array, out=max_image)
     
