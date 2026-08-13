@@ -9,7 +9,7 @@ authors:
 repository-code: "https://github.com/batradiik/pyHECTR"
 url: "https://github.com/batradiik/pyHECTR"
 license: "GPL-2.0-or-later"
-version: "0.1.0"
+version: "0.2.0"
 keywords:
   - "X-ray diffraction"
   - "surface X-ray diffraction"
