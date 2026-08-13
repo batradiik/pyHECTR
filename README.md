@@ -42,7 +42,7 @@ Then open JupyterLab and select the kernel named **pyHECTR**.
 
 ## Installation
 
-Python 3.9 or newer is recommended.
+Python 3.9–3.12 is currently supported.
 
 ### Install from PyPI
 
@@ -66,27 +66,15 @@ Install the latest version from the default branch:
 python -m pip install "pyhectr @ git+https://github.com/batradiik/pyHECTR.git"
 ```
 
-With notebook extras:
+With optional helper dependencies
 
 ```bash
 python -m pip install "pyhectr[full] @ git+https://github.com/batradiik/pyHECTR.git"
 ```
 
-
+---
 
 ### Clone for development
-
-```bash
-git clone https://github.com/batradiik/pyHECTR.git
-cd pyHECTR
-
-python -m venv .venv
-source .venv/bin/activate          # Linux/macOS
-# .venv\Scripts\activate           # Windows PowerShell
-
-python -m pip install --upgrade pip
-python -m pip install -e .
-```
 
 
 ```bash
@@ -107,7 +95,7 @@ python -m ipykernel install --user --name pyhectr-dev --display-name "pyHECTR de
 
 ## Documentation 
 
-The documentation for the related package can be find:
+Documentation is available at:
 https://pyhectr.readthedocs.io
 
 
@@ -230,7 +218,6 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 - pandas
 - tqdm
 - xrayutilities
-- ipython
 - jupyterlab
 - ipympl
 
@@ -254,7 +241,7 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 
 If you use `pyHECTR` in research, cite the software using the metadata in `CITATION.cff`.
 
-A paper citation wikk be added as the preferred citation after the associated manuscript has been published and assigned a DOI. For archived software releases, a version specific DOI can also be created through Zenodo.
+A paper citation will be added as the preferred citation after the associated manuscript has been published and assigned a DOI. For archived software releases, a version specific DOI can also be created through Zenodo.
 
 ---
 
