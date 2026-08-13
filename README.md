@@ -4,12 +4,12 @@
 
 # pyHECTR
 
-Python tools for high-energy crystal truncation rod (CTR) reconstruction, detector space mask preparation, and rocking scan integration.
+Python tools for high energy crystal truncation rod (CTR) reconstruction, detector space mask preparation, and rocking scan integration.
 
 
-`pyHECTR` supports the classical data reduction branch used for high energy grazing-incidence X-ray diffraction (HEGIXRD) measurements with  two dimensional detectors. The package provides utilities for detector geometry, reciprocal space reconstruction, CTR mask generation, and visualization.
+`pyHECTR` supports the classical data reduction branch used for high energy grazing incidence X-ray diffraction (HEGIXRD) measurements with  two dimensional detectors. The package provides utilities for detector geometry, reciprocal space reconstruction, CTR mask generation, and visualization.
 
-The neural-network mask inference based on Detectron2 is optional and requires a separate PyTorch/Detectron2 installation that matches your CPU/GPU environment.
+The neural network (CNN) mask inference based on Detectron2 is optional and requires a separate PyTorch/Detectron2 installation that matches your CPU/GPU environment.
 
 ---
 
