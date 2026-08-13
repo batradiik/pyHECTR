@@ -118,7 +118,7 @@ https://pyhectr.readthedocs.io
 
 The classical CTR reconstruction and rocking scan integration tools do **not** require Detectron2.
 
-Detectron2 is only needed for the optional Mask R-CNN / neural-network helpers in `pyhectr.mask_nn`. Detectron2 should be installed manually because it must match your installed PyTorch and CUDA setup.
+Detectron2 is only needed for the optional Mask R-CNN / neural network helpers in `pyhectr.mask_nn`. Detectron2 should be installed manually because it must match your installed PyTorch and CUDA setup.
 
 ### 1. Install `pyHECTR` with neural-network helper dependencies
 
@@ -138,7 +138,7 @@ Choose the correct command for your machine from the official PyTorch installati
 
 <https://pytorch.org/get-started/locally/>
 
-CPU-only example:
+CPU only example:
 
 ```bash
 python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
@@ -200,7 +200,7 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
   Conversion of detector pixels to fractional HKL coordinates.
 
 - `pyhectr.mask_nn`  
-  Optional Detectron2 / Mask R-CNN helper functions for detector space mask inference and prediction post-processing.
+  Optional Detectron2 / Mask R-CNN helper functions for detector space mask inference and prediction post processing.
 
 - `pyhectr.ebsd_map`  
   EBSD orientation map utilities, footprint selection, and EBSD coordinate calibration.
@@ -276,5 +276,5 @@ Bug reports and focused pull requests are welcome. Before contributing:
 
 This project is distributed under the GNU General Public License v2.0 or later (`GPL-2.0-or-later`). See `LICENSE`.
 
-Parts of the Bragg-simulation functionality are adapted from or closely related to `xrayutilities`, which is distributed under `GPL-2.0-or-later`. Preserve the applicable copyright and attribution notices for adapted code.
+Parts of the Bragg simulation functionality are adapted from or closely related to `xrayutilities`, which is distributed under `GPL-2.0-or-later`. Preserve the applicable copyright and attribution notices for adapted code.
 
