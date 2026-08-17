@@ -8,6 +8,8 @@ from tqdm import tqdm
 # in bragg_simulations.py
 from .theta0_finder import pixels_to_hkl_pointwise
 
+plt.rcParams["text.usetex"] = True
+
 def are_perpendicular(a, b, tolerance=1e-8):
     """
     Check whether two vectors are perpendicular within a numerical tolerance.
@@ -89,7 +91,7 @@ def peak_dict_to_records(peak_data):
 
 
 
-def filter_peaks_in_plot_range(peak_data, xlim=(-5,5), ylim=(-0.1,7.8)):
+def filter_peaks_in_plot_range(peak_data, x_lim=(-5,5), y_lim=(-0.1,7.8)):
     """
     Keep only the peaks whose (x,y) = (qy, qz) are inside the bounding box.
     Filter peak data arrays by plotted x/y limits.
@@ -100,9 +102,9 @@ def filter_peaks_in_plot_range(peak_data, xlim=(-5,5), ylim=(-0.1,7.8)):
         Dictionary containing at least ``'x'`` and ``'y'`` arrays. All values
         in the dictionary are converted to NumPy arrays and filtered with the
         same boolean mask.
-    xlim : tuple of float, default (-5, 5)
+    x_lim : tuple of float, default (-5, 5)
         Lower and upper limits for the plotted x-coordinate.
-    ylim : tuple of float, default (-0.1, 7.8)
+    y_lim : tuple of float, default (-0.1, 7.8)
         Lower and upper limits for the plotted y-coordinate.
 
     Returns
@@ -114,8 +116,8 @@ def filter_peaks_in_plot_range(peak_data, xlim=(-5,5), ylim=(-0.1,7.8)):
     x = peak_data["x"]
     y = peak_data["y"]
 
-    mask = ((x >= xlim[0]) & (x <= xlim[1]) &
-            (y >= ylim[0]) & (y <= ylim[1]))
+    mask = ((x >= x_lim[0]) & (x <= x_lim[1]) &
+            (y >= y_lim[0]) & (y <= y_lim[1]))
 
     filtered = {}
     for key, arr in peak_data.items():
