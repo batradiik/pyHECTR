@@ -2,6 +2,24 @@
 
 All notable changes to `pyHECTR` will be documented in this file.
 
+## [0.2.1]
+
+### Added
+
+- Added dedicated plotting utilities and expanded plotting functionality.
+- Added additional I/O helpers for detector and experimental data.
+
+### Changed
+
+- Improved detector data handling and related analysis utilities.
+- Updated example notebooks .
+- 
+### Fixed
+
+- Fixed int32 dtype handling in calculations involving xrayutilities.
+- Fixed plotting issues and improved compatibility of plotting functions.
+
+
 
 ## [0.2.0]
 

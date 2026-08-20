@@ -8,7 +8,6 @@ from tqdm import tqdm
 # in bragg_simulations.py
 from .theta0_finder import pixels_to_hkl_pointwise
 
-plt.rcParams["text.usetex"] = True
 
 def are_perpendicular(a, b, tolerance=1e-8):
     """
@@ -16,7 +15,7 @@ def are_perpendicular(a, b, tolerance=1e-8):
 
     Parameters
     ----------
-    a, b : array-like
+    a, b : array
         Input vectors. They must be compatible with `numpy.dot`.
     tolerance : float, default 1e-8
         Absolute tolerance used in the perpendicularity check.
@@ -369,10 +368,10 @@ def extract_hk_symmetry_from_table(
     h, k : int
         Reference in-plane Miller indices.
     l : int or float, optional
-        Optional reference out-of-plane index. If provided, rows are also
+        Optional reference out of plane index. If provided, rows are also
         filtered to the same ``l`` value.
     hkl_col : str, default 'hkl'
-        Name of the column containing HKL tuples or tuple-like strings.
+        Name of the column containing HKL tuples or tuple strings.
     key_cols : sequence of str, optional
         Columns used to match the reference family. If None, the current
         implementation matches by ``'x'`` only.
@@ -452,7 +451,7 @@ def hexagonal_hk_symmetry(h, k):
     Returns
     -------
     family : list of tuple[int, int]
-        Unique symmetry-equivalent ``(h, k)`` pairs in hexagonal indexing.
+        Unique symmetry equivalent ``(h, k)`` pairs in hexagonal indexing.
 
     """
     fam = [
@@ -497,14 +496,14 @@ def brute_force_hk_symmetry_search(
         - ``'l'`` : target L value.
         - ``'wl'`` : weight applied to the L residual.
     keep_frac : float
-        Fraction of lowest point-wise residuals kept when computing each rod
+        Fraction of lowest point wise residuals kept when computing each rod
         cost. Passed to :func:`robust_best_fraction`.
-    theta_grid_coarse : array-like
+    theta_grid_coarse : array
         Candidate theta offsets in degrees.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
-        Inverse UB matrix used to convert reciprocal-space vectors to HKL.
+        Inverse UB matrix used to convert reciprocal space vectors to HKL.
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
@@ -512,7 +511,7 @@ def brute_force_hk_symmetry_search(
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+        Sample detector distance in the same length unit as `pix_size`.
     lock_first : bool, default True
         If True, keep the first rod fixed to its original ``'hk'`` label to
         remove global symmetry duplicates.
@@ -587,24 +586,24 @@ def scan_theta(theta_grid, rods, keep_frac, omes_ang,
 
     Parameters
     ----------
-    theta_grid : array-like
+    theta_grid : array
         Candidate theta offsets in degrees.
     rods : list of dict
         Rod definitions passed to `total_cost`.
     keep_frac : float
         Fraction of lowest residuals kept for each rod.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
         Inverse UB matrix.
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
+        Direct beam detector center in pixel coordinates.
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+        Sample detector distance in the same length unit as `pix_size`.
 
     Returns
     -------
@@ -639,8 +638,8 @@ def robust_best_fraction(L2, keep_frac, mode="median"):
 
     Parameters
     ----------
-    L2 : array-like
-        Point-wise squared residuals or costs.
+    L2 : array
+        Point wise squared residuals or costs.
     keep_frac : float
         Fraction of the smallest finite values to keep. Must satisfy
         ``0 < keep_frac <= 1``.
@@ -689,7 +688,7 @@ def total_cost(theta0, rods, keep_frac, omes_ang, UBinv, Lambda, x0, y0, pix_siz
         ``'hk'``. Optional keys are ``'l'`` and ``'wl'``.
     keep_frac : float
         Fraction of the lowest point-wise residuals kept for each rod.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
         Inverse UB matrix.
@@ -794,28 +793,28 @@ def total_cost(theta0, rods, keep_frac, omes_ang, UBinv, Lambda, x0, y0, pix_siz
 def rod_L2(points, hk_target, theta0, omes_ang, UBinv, Lambda, x0, y0, pix_size, SDD,
            l_target=None, wl=0.0):
     """
-    Compute point-wise squared HK residuals for one rod.
+    Compute point wise squared HK residuals for one rod.
 
     Parameters
     ----------
     points : ndarray of shape (n_points, 3)
         Rod pixel coordinates as ``(image_index, gamma_pixel, delta_pixel)``.
     hk_target : tuple[float, float]
-        Target in-plane ``(h, k)`` assignment for the rod.
+        Target in plane ``(h, k)`` assignment for the rod.
     theta0 : float
         Theta offset in degrees subtracted from the omega angle of each point.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
         Inverse UB matrix.
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
+        Direct beam detector center in pixel coordinates.
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+        Sample detector distance in the same length unit as `pix_size`.
     l_target : float, optional
         Optional target L value.
     wl : float, default 0.0
@@ -845,28 +844,28 @@ def rod_L2(points, hk_target, theta0, omes_ang, UBinv, Lambda, x0, y0, pix_size,
 
 def rod_hkl_L2(points, hk_target, theta0, omes_ang, UBinv, Lambda, x0, y0, pix_size, SDD, l_target=None, wl=0.0):
     """
-    Compute HKL values and point-wise squared residuals for one rod.
+    Compute HKL values and point wise squared residuals for one rod.
 
     Parameters
     ----------
     points : ndarray of shape (n_points, 3)
         Rod pixel coordinates as ``(image_index, gamma_pixel, delta_pixel)``.
     hk_target : tuple[float, float]
-        Target in-plane ``(h, k)`` assignment for the rod.
+        Target in plane ``(h, k)`` assignment for the rod.
     theta0 : float
         Theta offset in degrees subtracted from the omega angle of each point.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
         Inverse UB matrix.
     Lambda : float
-        X-ray wavelength.
+        X ray wavelength.
     x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
+        Direct beam detector center in pixel coordinates.
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+        Sample detector distance in the same length unit as `pix_size`.
     l_target : float, optional
         Optional target L value.
     wl : float, default 0.0
@@ -916,18 +915,18 @@ def report_best_fraction(theta0, rods, keep_frac, omes_ang, UBinv, Lambda, x0, y
         ``'hk'``. Optional keys are ``'l'`` and ``'wl'``.
     keep_frac : float
         Fraction of lowest finite residuals to summarize.
-    omes_ang : array-like
+    omes_ang : array
         Omega angle values indexed by image number.
     UBinv : ndarray of shape (3, 3)
         Inverse UB matrix.
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
-        Direct-beam detector center in pixel coordinates.
+        Direct beam detector center in pixel coordinates.
     pix_size : float
         Detector pixel size in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance in the same length unit as `pix_size`.
+        Sample detector distance in the same length unit as `pix_size`.
     mode : {'median', 'mean'}, default 'median'
         Statistic used to summarize the retained HKL values and residuals.
 
@@ -1106,7 +1105,7 @@ def fast_StructureFactorForQ(qs, en0='config', temp=0, threshold=1e-3,
 
     
     Parameters:
-      qs             : array-like (N x 3) q-vectors.
+      qs             : array (N x 3) q-vectors.
       en0            : energy value or 'config' (if so, utilities.energy(config.ENERGY) is used)
       temp           : temperature (0 assumes zero temperature)
       threshold      : minimum intensity threshold for early rejection.
@@ -1208,13 +1207,13 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
             Legend label for the plotted material. If None, ``mat.name`` is used.
         min_intensity : float, optional
             If provided, discard peaks with relative intensity below this value
-            after structure-factor calculation.
+            after structure factor calculation.
         sf_threshold : float or None, default None
             Threshold passed to `fast_StructureFactorForQ` and also used to
-            filter relative intensities inside the nested peak-generation helper
+            filter relative intensities inside the nested peak generation helper
             when not None.
         q_max : float, optional
-            Reciprocal-space cutoff. If provided, it overrides the q-limit
+            Reciprocal space cutoff. If provided, it overrides the q limit
             calculated from `ttmax`.
         kwargs : dict, optional
             Additional keyword arguments passed to ``Axes.scatter``.
@@ -1222,7 +1221,7 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
     Returns
     -------
     ax : matplotlib.axes.Axes
-        Axes containing the reciprocal-space plot.
+        Axes containing the reciprocal space plot.
     h : matplotlib.collections.PathCollection
         Scatter artist returned by ``Axes.scatter``.
     peak_data : dict
@@ -1233,7 +1232,7 @@ def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, 
         - ``'hkl'``    : HKL labels for plotted peaks.
         - ``'qvec'``   : q-vectors ``(qx, qy, qz)`` for plotted peaks.
         - ``'angles'`` : angles returned by ``exp.Q2Ang``.
-        - ``'r'``      : relative structure-factor intensities.
+        - ``'r'``      : relative structure factor intensities.
 
     """
     if ttmax is None:

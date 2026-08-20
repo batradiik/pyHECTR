@@ -14,7 +14,7 @@ def _als_baseline(y: np.ndarray,
                   p: float = 0.01,
                   n_iter: int = 10) -> np.ndarray:
     """
-    Asymmetric least-squares baseline estimate.
+    Asymmetric least squares baseline estimate.
 
     Parameters
     ----------
@@ -89,16 +89,16 @@ def line_prof_bckg_subtr(intensities: np.ndarray,
                          als_lambda: float = 1e5,
                          als_p: float = 0.01) -> np.ndarray:
     """
-    Estimate the background profile of a one-dimensional rocking curve.
+    Estimate the background profile of a one dimensional rocking curve.
 
     Depending on `flag`, the background is estimated either by fitting a
-    straight line through the lower-intensity part of the profile, by applying
+    straight line through the lower intensity part of the profile, by applying
     a median filter, or by using asymmetric least-squares baseline smoothing.
 
     Parameters
     ----------
-    intensities : array-like of shape (n_points,)
-        Raw rocking-curve intensity profile as a function of omega or image
+    intensities : array of shape (n_points,)
+        Raw rocking curve intensity profile as a function of omega or image
         index.
     flag : {'median', 'mean', 'medfilt', 'als'}, default 'median'
         Background estimation method.
@@ -112,7 +112,7 @@ def line_prof_bckg_subtr(intensities: np.ndarray,
             intensity.
 
         ``'medfilt'``
-            Return a median-filtered version of the profile.
+            Return a median filtered version of the profile.
 
         ``'als'``
             Return an asymmetric least-squares baseline.
@@ -138,14 +138,6 @@ def line_prof_bckg_subtr(intensities: np.ndarray,
         If `med_kernel` is not a positive odd integer, if `intensities` is not
         one-dimensional or is empty, or if `flag` is not one of the supported
         methods.
-
-    Notes
-    -----
-    For ``flag='median'`` and ``flag='mean'``, the function returns the fitted
-    linear background, not the background-subtracted intensity.
-
-    For ``flag='medfilt'`` and ``flag='als'``, the function returns the
-    estimated baseline directly.
     """
     if med_kernel < 1:
         raise ValueError("med_kernel must be positive.")
@@ -208,7 +200,7 @@ def signal_direction(y_pixels):
 
     Parameters
     ----------
-    y_pixels : array-like of shape (n_points,)
+    y_pixels : array of shape (n_points,)
         Ordered sequence of detector y-pixel coordinates.
 
     Returns
@@ -239,11 +231,11 @@ def signal_direction(y_pixels):
 
 def get_signal_image_range(pixel_coord_plot):
     """
-    Return and plot the image indices that contain signal-mask pixels.
+    Return and plot the image indices that contain signal mask pixels.
 
     Parameters
     ----------
-    pixel_coord_plot : array-like of shape (n_hits, 3)
+    pixel_coord_plot : array of shape (n_hits, 3)
         Signal pixel coordinates. Each row is expected to contain
         ``(omega_index, gamma_pixel, delta_pixel)``.
 
@@ -444,7 +436,7 @@ def rocking_scan_integration(tmp1 , pixel_coord_plot, half_omega_r, half_delta_r
     delta_windows          = []
 
     """
-    Integrate rocking-curve intensities around a moving gamma/delta ROI.
+    Integrate rocking curve intensities around a moving gamma/delta ROI.
 
     For each consecutive pair of gamma bin edges, the function finds signal
     pixels whose gamma coordinate lies inside the half-open interval
@@ -455,7 +447,7 @@ def rocking_scan_integration(tmp1 , pixel_coord_plot, half_omega_r, half_delta_r
     tmp1 : ndarray of shape (n_omega, n_gamma, n_delta)
         Image stack or corrected intensity stack to integrate. Axis 0 is the
         omega/image axis, axis 1 is gamma pixels, and axis 2 is delta pixels.
-    pixel_coord_plot : array-like of shape (n_hits, 3)
+    pixel_coord_plot : array of shape (n_hits, 3)
         Signal pixel coordinates. Each row is expected to contain
         ``(omega_index, gamma_pixel, delta_pixel)``.
     half_omega_r : int
@@ -467,10 +459,10 @@ def rocking_scan_integration(tmp1 , pixel_coord_plot, half_omega_r, half_delta_r
     bin_rate : int or float
         Gamma binning parameter retained for API compatibility. It is not used
         directly by the current implementation.
-    gamma_edges : array-like of shape (n_bins + 1,)
-        Gamma bin edges. Consecutive pairs define half-open gamma intervals
+    gamma_edges : array of shape (n_bins + 1,)
+        Gamma bin edges. Consecutive pairs define half open gamma intervals
         ``[g0, g1)``.
-    gamma_centres : array-like of shape (n_bins,)
+    gamma_centres : array of shape (n_bins,)
         Gamma bin centres retained for API compatibility. They are not used
         directly by the current implementation.
     FLAG : {'median', 'mean', 'medfilt', 'als'}, default 'median'
@@ -720,13 +712,13 @@ def rod_points_prep(mask_arr, y_u=None, y_b=None,
     """
     The function applies optional image, gamma, and delta crops by setting
     pixels outside the requested ranges to zero. It then returns the coordinates
-    of all remaining nonzero pixels and a two-dimensional maximum projection
+    of all remaining nonzero pixels and a two dimensional maximum projection
     for quick visualization.
 
     Parameters
     ----------
     mask_arr : ndarray of shape (n_images, n_gamma, n_delta)
-        Three-dimensional mask stack. Nonzero values are treated as selected
+        Three dimensional mask stack. Nonzero values are treated as selected
         rod pixels.
     y_u : int, optional
         Upper gamma crop boundary. Pixels with gamma index smaller than `y_u`
@@ -746,7 +738,7 @@ def rod_points_prep(mask_arr, y_u=None, y_b=None,
         First image index to discard. Images from `im_end` onward are set to
         zero, so the kept interval is ``[im_start, im_end)``.
     show : bool, default True
-        If True, display the two-dimensional maximum projection.
+        If True, display the two dimensional maximum projection.
 
     Returns
     -------

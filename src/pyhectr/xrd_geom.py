@@ -9,24 +9,25 @@ from numpy.linalg import norm
 import scipy
 from itertools import product
 import cv2 as cv
+import xrayutilities as xu
 
  
 def ROI_to_angle(ROI, x0, pix_size, SDD):
     """
-    Convert a one-dimensional detector ROI into detector angles.
+    Convert a one dimensional detector ROI into detector angles.
     ``angle = arctan(-(pixel - x0) * pix_size / SDD)``.
 
     Parameters
     ----------
     ROI : slice
-        Pixel-index interval. The function uses ``ROI.start`` and ``ROI.stop``
+        Pixel index interval. The function uses ``ROI.start`` and ``ROI.stop``
         and assumes a step of one pixel.
     x0 : float
-        Direct-beam center position in pixels along the selected detector axis.
+        Direct beam center position in pixels along the selected detector axis.
     pix_size : float
         Detector pixel size, in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance, in the same length unit as `pix_size`.
+        Sample detector distance, in the same length unit as `pix_size`.
 
     Returns
     -------
@@ -45,14 +46,14 @@ def pixel_to_angle(pixel, center, pix_size, SDD):
 
     Parameters
     ----------
-    pixel : float or array-like
+    pixel : float or array
         Pixel coordinate or coordinates.
     center : float
-        Direct-beam center position in pixels.
+        Direct beam center position in pixels.
     pix_size : float
         Detector pixel size, in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance, in the same length unit as `pix_size`.
+        Sample detector distance, in the same length unit as `pix_size`.
 
     Returns
     -------
@@ -65,11 +66,11 @@ def pixel_to_angle(pixel, center, pix_size, SDD):
 
 def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
     """
-    Build a reciprocal-space interpolation grid for a detector ROI.
+    Build a reciprocal space interpolation grid for a detector ROI.
 
-    The function maps detector pixels to grazing-incidence reciprocal-space
+    The function maps detector pixels to grazing incidence reciprocal space
     coordinates and constructs a regular ``(q_r, q_z)`` grid. It also computes
-    the corresponding detector-coordinate lookup arrays used by
+    the corresponding detector coordinate lookup arrays used by
     ``scipy.interpolate.interpn``.
 
     Parameters
@@ -81,13 +82,13 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
     pix_size : float
         Detector pixel size, in the same length unit as `SDD`.
     SDD : float
-        Sample-detector distance, in the same length unit as `pix_size`.
+        Sample detector distance, in the same length unit as `pix_size`.
     Lambda : float
         X-ray wavelength.
     x0, y0 : float
-        Direct-beam center in detector pixel coordinates.
+        Direct beam center in detector pixel coordinates.
     incidence_ang : float
-        Grazing-incidence angle in degrees.
+        Grazing incidence angle in degrees.
 
     Returns
     -------
@@ -100,9 +101,9 @@ def Q_grid2(ROIx, ROIy, pix_size, SDD, Lambda, x0, y0, incidence_ang):
     RR_z : ndarray
         Detector y-coordinate lookup array for interpolation onto the q-grid.
     q_r : ndarray
-        Regular in-plane reciprocal-space axis.
+        in plane reciprocal space axis.
     q_z : ndarray
-        Regular out-of-plane reciprocal-space axis.
+        out of plane reciprocal space axis.
     """
     
     ai = np.deg2rad(incidence_ang)
@@ -246,11 +247,11 @@ def cos_angle_(v, w): return v.dot(w)/(norm(v)*norm(w))
 
 def set_reciprocal_cell_5(a, b, c, transformation=None, transformation_flag=False):
     """
-    Construct a reciprocal-lattice B matrix from direct lattice vectors.
+    Construct a reciprocal lattice B matrix from direct lattice vectors.
 
     Parameters
     ----------
-    a, b, c : array-like of shape (3,)
+    a, b, c : array of shape (3,)
         Direct lattice vectors.
     transformation : ndarray of shape (3, 3), optional
         Optional transformation applied to the reciprocal basis vectors when
@@ -262,7 +263,7 @@ def set_reciprocal_cell_5(a, b, c, transformation=None, transformation_flag=Fals
     Returns
     -------
     bMatrix : ndarray of shape (3, 3)
-        Reciprocal-lattice B matrix.
+        Reciprocal lattice B matrix.
     """
     # Calculate the reciprocal lattice parameters
     pi = np.pi
@@ -314,7 +315,7 @@ def UBinv(B, phi0, chi0, mu0):
     Parameters
     ----------
     B : ndarray of shape (3, 3)
-        Reciprocal-lattice B matrix.
+        Reciprocal lattice B matrix.
     phi0 : float
         Rotation angle around the laboratory z-axis, in degrees.
     chi0 : float
@@ -346,11 +347,11 @@ def hkl_calc(delta_, gamma_, theta_, UB_inv, Lambda):
 
     Parameters
     ----------
-    delta_ : array-like of shape (n_delta,)
+    delta_ : array of shape (n_delta,)
         Detector horizontal angles in degrees.
-    gamma_ : array-like of shape (n_gamma,)
+    gamma_ : array of shape (n_gamma,)
         Detector vertical angles in degrees.
-    theta_ : array-like of shape (n_theta,)
+    theta_ : array of shape (n_theta,)
         Sample rotation angles in degrees.
     UB_inv : ndarray of shape (3, 3)
         Inverse UB matrix.
@@ -561,7 +562,7 @@ def make_mask_fast(h, k, h_peak, k_peak, threshold=0.028):
     ----------
     h, k : ndarray
         HK coordinate arrays with matching shapes.
-    h_peak, k_peak : float or array-like
+    h_peak, k_peak : float or array
         Target HK coordinates. If both contain multiple values, all Cartesian
         combinations are used as candidate centers.
     threshold : float, default 0.028
@@ -744,7 +745,7 @@ def grow_or_shrink(mask,
     Raises
     ------
     ValueError
-        If `mask` is not two-dimensional, if `metric` is unsupported, or if
+        If `mask` is not two dimensional, if `metric` is unsupported, or if
         `struct` is unsupported.
     """
     mask = np.asarray(mask)
@@ -824,8 +825,8 @@ def check_integration(data_im,
         Delta integration window. Can be one constant window or one window per
         frame.
     omega_values : ndarray
-        Omega-axis values.
-    omega_windows : sequence of slice or array-like
+        Omega axis values.
+    omega_windows : sequence of slice or array
         Indices selecting the omega window for each frame.
     L_values : ndarray
         L values indexed by gamma pixel.
@@ -837,7 +838,7 @@ def check_integration(data_im,
         If True, create an animation instead of an interactive slider.
     fps : int, default 2
         Animation frames per second.
-    save_path : str or path-like, optional
+    save_path : str or path, optional
         Output path for animation. Must end with ``.gif`` or ``.mp4`` when
         saving.
     verbose : bool, default False
@@ -880,7 +881,7 @@ def check_integration(data_im,
             "Stacks for image, profiles and window lists must have identical length."
         )
 
-    # Delta window handling: constant vs per-frame.
+    # Delta window handling: constant vs per frame.
     per_frame_delta = (
         isinstance(delta_windows, (list, tuple, np.ndarray))
         and len(delta_windows) == n_frames
@@ -1016,4 +1017,132 @@ def check_integration(data_im,
 
     return fig, ax
 
+
+def grid_hkl_3d(h, k, l, data, bins, max_points_per_call=500_000_000, verbose=True,):
+    """
+    Grid calculated HKL coordinates using xrayutilities Gridder3D.
+
+    Large datasets are automatically divided 
+    into frame chunks to avoid the 32-bit point count limitation of
+    the xrayutilities C Gridder3D implementation.
+
+    Parameters
+    ----------
+    h, k, l : ndarray
+        HKL coordinate arrays with shape
+        ``(n_frames, n_gamma, n_delta)``.
+
+    data : ndarray
+        Detector intensity data with the same shape as ``h``, ``k``,
+        and ``l``.
+
+    bins : tuple of int
+        Number of grid points along h, k, and l:
+        ``(bins_h, bins_k, bins_l)``.
+
+    max_points_per_call : int, default=500_000_000
+        Maximum number of detector points passed to Gridder3D in one
+        call. The value should remain safely below the signed 32-bit
+        integer limit (2**31 - 1).
+
+    verbose : bool, default=True
+        Print information about chunking.
+
+    Returns
+    -------
+    gridder : xrayutilities.Gridder3D
+        Filled reciprocal space gridder.
+    """
+
+    # ---------------------------------------------------------
+    # Input checks
+    # ---------------------------------------------------------
+
+    if h.shape != k.shape or h.shape != l.shape:
+        raise ValueError(
+            "h, k, and l must have identical shapes. "
+            f"Got h={h.shape}, k={k.shape}, l={l.shape}."
+        )
+
+    if h.shape != data.shape:
+        raise ValueError(
+            "HKL arrays and detector data must have identical shapes. "
+            f"HKL={h.shape}, data={data.shape}."
+        )
+
+    if h.ndim != 3:
+        raise ValueError(
+            f"Expected 3D arrays (frames, gamma, delta), got {h.ndim}D."
+        )
+
+    bins_h, bins_k, bins_l = bins
+    n_frames = h.shape[0]
+    points_per_frame = int(np.prod(h.shape[1:], dtype=np.int64))
+    total_points = int(np.prod(h.shape, dtype=np.int64))
+    # Hard safety check.
+    int32_max = np.iinfo(np.int32).max
+    if max_points_per_call >= int32_max:
+        raise ValueError(
+            "max_points_per_call must be smaller than the signed "
+            f"32-bit limit ({int32_max})."
+        )
+    # Number of complete frames which safely fit into one call.
+    chunk_frames = max(1, max_points_per_call // points_per_frame,)
+    if verbose:
+        print(
+            f"HKL grid input:\n"
+            f"  frames           : {n_frames}\n"
+            f"  points/frame     : {points_per_frame:,}\n"
+            f"  total points     : {total_points:,}\n"
+            f"  max points/call  : {max_points_per_call:,}\n"
+            f"  chunk size       : {chunk_frames} frames"
+        )
+
+    # ---------------------------------------------------------
+    # Small dataset: original xrayutilities behavior
+    # ---------------------------------------------------------
+    if total_points <= max_points_per_call:
+        if verbose:
+            print("Gridder3D: using a single call.")
+        gridder = xu.Gridder3D(bins_h, bins_k, bins_l,)
+        gridder(h, k, l, data)
+        return gridder
+    # ---------------------------------------------------------
+    # Large dataset: sequential Gridder3D
+    # ---------------------------------------------------------
+    if verbose:
+        print("Gridder3D: using chunked sequential gridding.")
+    # Exactly the global HKL range which the normal one-shot
+    # Gridder3D would determine from the complete arrays.
+    hmin = float(np.min(h))
+    hmax = float(np.max(h))
+    kmin = float(np.min(k))
+    kmax = float(np.max(k))
+    lmin = float(np.min(l))
+    lmax = float(np.max(l))
+
+    if verbose:
+        print("Global HKL range:"
+            f"\n  h: {hmin:.6f} ... {hmax:.6f}"
+            f"\n  k: {kmin:.6f} ... {kmax:.6f}"
+            f"\n  l: {lmin:.6f} ... {lmax:.6f}"
+        )
+
+    gridder = xu.Gridder3D(bins_h, bins_k, bins_l,)
+    
+    # all chunks must use exactly the same bins.
+    gridder.dataRange(hmin, hmax, kmin, kmax, lmin, lmax,)
+
+    # subsequent calls accumulate into the same grid.
+    gridder.KeepData(True)
+    for start in range(0, n_frames, chunk_frames):
+        stop = min(start + chunk_frames, n_frames,)
+        if verbose:
+            n_points = ((stop - start) * points_per_frame)
+            print(f"Gridding frames {start:4d}:{stop:4d} "
+                f"({n_points:,} points)"
+            )
+        gridder(h[start:stop], k[start:stop], l[start:stop], data[start:stop],)
+
+    return gridder
 

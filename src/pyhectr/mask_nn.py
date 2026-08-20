@@ -10,29 +10,20 @@ from skimage import exposure
 
 try:
     import torch
-except Exception:  # pragma: no cover - optional dependency on non-GPU systems
+except Exception:  
     torch = None
 
-try:
-    import h5py
-except Exception:  # pragma: no cover - optional dependency
-    h5py = None
-
-try:
-    import hdf5plugin  # noqa: F401  # imported for HDF5 filter registration
-except Exception:  # pragma: no cover - optional dependency
-    hdf5plugin = None
 
 try:
     import matplotlib.pyplot as plt
     from matplotlib.widgets import Slider
-except Exception:  # pragma: no cover - optional dependency
+except Exception:  
     plt = None
     Slider = None
 
 try:
     from yacs.config import CfgNode as CN
-except Exception:  # pragma: no cover - optional dependency
+except Exception:  
     CN = None
 
 try:
@@ -157,14 +148,14 @@ def prediction_output_dir(output_dir, scan_name, model_name, output_prefix=None)
 
     Parameters
     ----------
-    output_dir : str or path-like
+    output_dir : str or path
         Base directory where all prediction products are written.
     scan_name : str
         Name of the processed detector stack, usually the ``.npy`` filename
         without extension.
-    model_name : str or path-like
+    model_name : str or path
         Model path relative to ``model_dir``. The first path component is used
-        as the model-family subfolder.
+        as the model family subfolder.
     output_prefix : str, optional
         Experiment or workflow label, for example ``"P03_clip_resized_2025"``.
         If omitted, the scan name is used directly.
@@ -183,132 +174,6 @@ def prediction_output_dir(output_dir, scan_name, model_name, output_prefix=None)
         run_folder = f"{_safe_name(output_prefix)}-{scan_name}-"
     return os.path.join(output_dir, run_folder, model_group)
 
-def find_eiger_h5_files(current_scan):
-    """Find Eiger HDF5 master/data files inside one DESY P03 scan directory.
-
-    Parameters
-    ----------
-    current_scan : str or path
-        Directory containing the Eiger ``master`` file and one or more data
-        HDF5 files.
-
-    Returns
-    -------
-    h5_file_master : str or None
-        Path containing ``"master"`` in the filename, if found.
-    h5_file : str or None
-        First non-master HDF5 file found by the original notebook logic.
-    h5_files : list of str
-        All files discovered directly inside ``current_scan``.
-    """
-    h5_files = []
-    for name in os.listdir(current_scan):
-        h5_files.append(os.path.join(current_scan, name))
-
-    h5_file_master = None
-    h5_file = None
-    for f in h5_files:
-        if 'master' in f:
-            h5_file_master = f
-        else:
-            h5_file = f
-    return h5_file_master, h5_file, h5_files
-
-
-def load_eiger_h5_data(h5_file, dataset_path = 'entry/data/data'):
-    """Load an Eiger detector stack from an HDF5 file.
-
-    Parameters
-    ----------
-    h5_file : str or path
-        Eiger HDF5 data file.
-    dataset_path : str, default ``"entry/data/data"``
-        Dataset path inside the HDF5 file.
-
-    Returns
-    -------
-    h5_data : ndarray
-        Detector stack with shape ``(n_images, n_y, n_x)``.
-
-    Raises
-    ------
-    ImportError
-        If ``h5py`` is not installed.
-    """
-    if h5py is None:
-        raise ImportError("h5py is required to read Eiger HDF5 data.")
-    with h5py.File(h5_file, 'r') as hdf:
-        print("Keys: %s" % hdf['entry/data'].keys())
-        h5_data = hdf[dataset_path][:]
-    return h5_data
-
-
-def prepare_p03_eiger_stack(
-    h5_data,
-    crop_y = slice(None, 2370),
-    mean_threshold = 4.2e9,
-    clip_y = slice(1070, None),
-    clip_x = slice(1030, None),
-):
-    """Prepare the DESY P03 Eiger stack and detector crop used for inference.
-
-    The function follows the workflow: crop the unused detector-y
-    range, build a mean image, suppress very bright persistent pixels, and
-    return both the filtered full-size stack and the cropped stack used by the
-    Mask R-CNN model.
-
-    Parameters
-    ----------
-    h5_data : ndarray
-        Raw detector stack with shape ``(n_images, n_y, n_x)``.
-    crop_y : slice, default ``slice(None, 2370)``
-        Initial y crop applied before mean-image filtering.
-    mean_threshold : float, default ``4.2e9``
-        Pixels above this mean value are set to zero in all frames.
-    clip_y, clip_x : slice
-        Final detector crop used for the P03 cropped prediction case.
-
-    Returns
-    -------
-    data_filtered : ndarray
-        Full filtered stack after bright-pixel suppression.
-    data_filtered_clip : ndarray
-        Cropped stack used as Mask R-CNN input.
-    """
-    h5_data = h5_data[:, crop_y, :]
-    dd_mean = h5_data.mean(axis=0)
-    mask = dd_mean > mean_threshold
-    data_filtered = h5_data.copy()
-    data_filtered[:, mask] = 0
-    data_filtered_clip = data_filtered[:, clip_y, clip_x].copy()
-    return data_filtered, data_filtered_clip
-
-
-def collect_npy_data_paths(processed_data_path):
-    """Collect prepared ``.npy`` detector stacks from subfolders.
-
-    Parameters
-    ----------
-    processed_data_path : str or path-like
-        Directory whose immediate subfolders contain prepared NumPy stacks.
-
-    Returns
-    -------
-    data_paths : list of str
-        Sorted list of discovered ``.npy`` files. These paths can be passed to
-        :func:`run_prediction_for_npy_files`.
-    """
-    folders = sorted(os.listdir(processed_data_path))
-    data_paths = []
-    for folder in folders:
-        folder_path = os.path.join(processed_data_path, folder)  # Form the folder's full path
-        if os.path.isdir(folder_path):
-            for file_name in os.listdir(folder_path):
-                if file_name.endswith('.npy'):  # Filter only .npy files
-                    file_path = os.path.join(folder_path, file_name)
-                    # print(f'{file_path = }\n')  # Process the file path as needed
-                    data_paths.append(file_path)
-    return data_paths
 
 
 # -----------------------------------------------------------------------------
@@ -826,16 +691,16 @@ def run_prediction_for_npy_files(
     cfg : detectron2 CfgNode
         Base Detectron2 config from :func:`build_mask_rcnn_cfg`.
     possible_methods : sequence of str
-        Channel-construction names that may be encoded in model filenames.
+        Channel construction names that may be encoded in model filenames.
     possible_methods_intensity_map : dict, optional
-        Mapping from method-name fragments to preprocessing functions.
+        Mapping from method name fragments to preprocessing functions.
     full_size_predict : bool, default False
         If True, keep prepared images at their native shape. If False, resize
         to ``target_height`` × ``target_width`` before inference.
     save_predicted_mask : bool, default False
-        Save dense per-frame masks.
+        Save dense per frame masks.
     save_prediction_bb : bool, default True
-        Save bounding boxes and per-instance mask coordinates.
+        Save bounding boxes and per instance mask coordinates.
     target_height, target_width : int
         Resize target used when ``full_size_predict=False``.
     output_prefix : str, default ``"P03_clip_resized_2025"``
@@ -955,165 +820,6 @@ def run_prediction_for_npy_files(
                 print("Skipping this model...\n")
                 continue
     return outputs
-
-# -----------------------------------------------------------------------------
-# Loading/summing saved prediction masks for integration
-# -----------------------------------------------------------------------------
-
-
-def _boxes_to_mask(boxes_scores, height, width, score_thresh):
-    """Rasterise a ``(N,5)`` array of boxes into a binary mask, clipped to shape."""
-    mask = np.zeros((height, width), dtype=np.uint8)
-    boxes_scores = np.asarray(boxes_scores)
-    if boxes_scores.size == 0:
-        return mask
-    if boxes_scores.ndim != 2 or boxes_scores.shape[1] < 4:
-        raise ValueError(f"boxes_scores must have shape (N,4+) or (N,5), got {boxes_scores.shape!r}")
-    if boxes_scores.shape[1] >= 5:
-        keep = boxes_scores[:, 4] >= score_thresh
-    else:
-        keep = np.ones(boxes_scores.shape[0], dtype=bool)
-    for row in boxes_scores[keep]:
-        x1, y1, x2, y2 = row[:4]
-        x1_i = max(0, min(width - 1, int(np.floor(x1))))
-        y1_i = max(0, min(height - 1, int(np.floor(y1))))
-        x2_i = max(0, min(width - 1, int(np.ceil(x2))))
-        y2_i = max(0, min(height - 1, int(np.ceil(y2))))
-        if x2_i >= x1_i and y2_i >= y1_i:
-            mask[y1_i: y2_i + 1, x1_i: x2_i + 1] = 1
-    return mask
-
-
-def _coords_to_mask(coords_list, height, width):
-    """Rasterise a list of ``(row, col)`` arrays into a binary mask, clipped to shape."""
-    mask = np.zeros((height, width), dtype=np.uint8)
-    for coords in coords_list:
-        coords = np.asarray(coords)
-        if coords.size == 0:
-            continue
-        if coords.ndim != 2 or coords.shape[1] < 2:
-            warnings.warn(f"Skipping malformed coords array with shape {coords.shape!r}.", RuntimeWarning, stacklevel=2)
-            continue
-        rows, cols = _clip_coords_to_shape(coords[:, 0], coords[:, 1], height, width)
-        mask[rows, cols] = 1
-    return mask
-
-def _bb_list_to_stack(bb_obj_arr,
-                      height, width,
-                      score_thresh,
-                      COORDS_ONLY = True):
-    """Convert a per frame object array of bounding boxes/coords to a mask stack."""
-    print(f'{score_thresh = }\n')
-    masks = []
-    for frame_entry in bb_obj_arr:
-        if COORDS_ONLY:
-            if isinstance(frame_entry, dict) and "coords" in frame_entry:
-                coords_list = frame_entry["coords"]
-                # Filter using bbox scores if available
-                if "bb" in frame_entry and frame_entry["bb"].size > 0:
-                    bb_scores = frame_entry["bb"][:, 4]
-                    if len(bb_scores) != len(coords_list):
-                        print(f"Warning: {len(coords_list)} masks but {len(bb_scores)} scores")
-                    else:
-                        # Filter masks using bbox scores
-                        keep = bb_scores >= score_thresh
-                        coords_list = [c for i, c in enumerate(coords_list) if keep[i]]
-                mask = _coords_to_mask(coords_list, height, width)
-            else:
-                # Skip any bounding box representations
-                mask = np.zeros((height, width), dtype=np.uint8)
-        else:
-            if isinstance(frame_entry, dict):
-                if "coords" in frame_entry:
-                    coords_list = frame_entry["coords"]
-                    # Filter using bbox scores if available
-                    if "bb" in frame_entry and frame_entry["bb"].size > 0:
-                        bb_scores = frame_entry["bb"][:, 4]
-                        if len(bb_scores) != len(coords_list):
-                            print(f"Warning: {len(coords_list)} masks but {len(bb_scores)} scores")
-                        else:
-                            # Filter masks using bbox scores
-                            keep = bb_scores >= score_thresh
-                            coords_list = [c for i, c in enumerate(coords_list) if keep[i]]
-                    mask = _coords_to_mask(coords_list, height, width)
-                else:
-                    mask = _boxes_to_mask(frame_entry.get("bb", np.empty((0, 5))),
-                                          height, width, score_thresh)
-            else:
-                mask = _boxes_to_mask(frame_entry, height, width, score_thresh)
-        masks.append(mask)
-    return np.stack(masks, axis=0).astype(np.int32)
-
-
-def load_and_sum_predictions(
-    npy_files = None,
-    dir_path = None,
-    target_shape = (1024, 1440),
-    score_thresh = 0.066,
-):
-    """Aggregate saved prediction ``.npy`` files into a ``(T,H,W)`` mask stack.
-
-    Accepts dense binary/probability mask stacks with any numeric dtype, plus
-    object arrays containing the saved ``{"bb": ..., "coords": ...}`` records.
-    """
-
-    if npy_files is None:
-        if dir_path is None:
-            raise ValueError("Either *npy_files* or *dir_path* must be provided.")
-        try:
-            npy_files = [os.path.join(dir_path, f) for f in sorted(os.listdir(dir_path)) if f.endswith(".npy")]
-        except Exception as e:
-            print(f"Error listing directory {dir_path}: {e}")
-            return None
-    else:
-        npy_files = npy_files.tolist() if isinstance(npy_files, np.ndarray) else list(npy_files)
-
-    if len(npy_files) == 0:
-        print("No .npy files to load.")
-        return None
-
-    height, width = target_shape
-    arr_sum = None
-    frames_expected = None
-
-    for file_path in npy_files:
-        filename = os.path.basename(file_path)
-        try:
-            arr_loaded = np.load(file_path, allow_pickle=True)
-        except Exception as e:
-            print(f"Skipping {filename}: load failed – {e}")
-            continue
-
-        if arr_loaded.dtype == object:
-            file_masks = _bb_list_to_stack(arr_loaded, height, width, score_thresh)
-        elif np.issubdtype(arr_loaded.dtype, np.number) or arr_loaded.dtype == np.bool_:
-            if arr_loaded.ndim != 3:
-                print(f"Skipping {filename}: dense masks must be 3-D, got ndim={arr_loaded.ndim}")
-                continue
-            file_masks = (arr_loaded > 0).astype(np.int32)
-        else:
-            print(f"Skipping {filename}: unsupported layout (dtype={arr_loaded.dtype}, ndim={arr_loaded.ndim})")
-            continue
-
-        if frames_expected is None:
-            frames_expected = file_masks.shape[0]
-        elif file_masks.shape[0] != frames_expected:
-            print(f"Skipping {filename}: frame count mismatch {file_masks.shape[0]} vs {frames_expected}")
-            continue
-
-        if arr_sum is None:
-            arr_sum = file_masks.copy()
-            print(f"Initialized accumulator with {filename} – shape {arr_sum.shape}.")
-        else:
-            if arr_sum.shape != file_masks.shape:
-                print(f"Skipping {filename}: shape mismatch {file_masks.shape} vs {arr_sum.shape}")
-                continue
-            arr_sum += file_masks
-            print(f"Added {filename} to accumulator.")
-
-    if arr_sum is None:
-        print("No arrays were successfully loaded and summed.")
-    return arr_sum
 
 # # -----------------------------------------------------------------------------
 # # Mask morphology helpers used before integration
@@ -1300,7 +1006,7 @@ def run_model(cfg, method, model_path, output_dir, test_datasets, npy_file_dir, 
         Base directory for evaluation products.
     test_datasets : sequence of str
         Detectron2 dataset names to evaluate.
-    npy_file_dir : str or path-like
+    npy_file_dir : str or path
         Directory with NumPy files used by the custom mapper.
     mapper : callable, optional
         Optional Detectron2 mapper passed to ``build_detection_test_loader``.

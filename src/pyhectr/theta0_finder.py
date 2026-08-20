@@ -12,15 +12,15 @@ def pixels_to_hkl_pointwise(xpix, ypix, theta_deg, UBinv, Lambda, x0, y0, pix_si
 
     Parameters
     ----------
-    xpix : float or array-like
+    xpix : float or array
         Detector x-pixel coordinate(s), corresponding to the delta direction.
-    ypix : float or array-like
+    ypix : float or array
         Detector y-pixel coordinate(s), corresponding to the gamma direction.
-    theta_deg : float or array-like
-        Sample rotation angle in degrees. Must be broadcast-compatible with
+    theta_deg : float or array
+        Sample rotation angle in degrees. Must be broadcast compatible with
         `xpix` and `ypix`.
-    UBinv : array-like of shape (3, 3)
-        Inverse UB matrix used to transform reciprocal-space vectors into HKL
+    UBinv : array of shape (3, 3)
+        Inverse UB matrix used to transform reciprocal space vectors into HKL
         coordinates.
     Lambda : float
         X-ray wavelength. Must be positive.
