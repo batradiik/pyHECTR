@@ -4,6 +4,7 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Tuple
+from scipy.interpolate import interpn
 
 import numpy as np
 from PIL import Image

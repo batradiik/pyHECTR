@@ -11,6 +11,10 @@ __all__ = [
     "select_footprint",
     "read_ebsd_region",
     "calibrate_ebsd_to_mm",
+    "coerce_angle_cols",
+    "apply_affine",
+    "fit_affine",
+    
 ]
 
 def coerce_angle_cols(df, cols=("phi1", "PHI", "phi2")):
