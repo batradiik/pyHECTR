@@ -427,14 +427,6 @@ def rocking_scan_integration(tmp1 , pixel_coord_plot, half_omega_r, half_delta_r
                              bin_rate, gamma_edges, gamma_centres, 
                              FLAG = 'median', medfilt_kernel = 51, SHOW_PLOT = False, 
                              PRINT_INTEGRATION_INFO = False):
-    intensities_summed     = []
-    int_slider_raw         = []
-    int_slider_subtracted  = []
-    bckgd_slider           = []
-    omega_windows          = []
-    gamma_windows          = []
-    delta_windows          = []
-
     """
     Integrate rocking curve intensities around a moving gamma/delta ROI.
 
@@ -497,6 +489,14 @@ def rocking_scan_integration(tmp1 , pixel_coord_plot, half_omega_r, half_delta_r
         Delta windows ``(de0, de1)`` used for non-empty gamma bins.
 
     """
+    
+    intensities_summed     = []
+    int_slider_raw         = []
+    int_slider_subtracted  = []
+    bckgd_slider           = []
+    omega_windows          = []
+    gamma_windows          = []
+    delta_windows          = []
 
     n_omega, gamma_pxl_range, n_delta = tmp1.shape
     n_bins                            = len(gamma_centres)

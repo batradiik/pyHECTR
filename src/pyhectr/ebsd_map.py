@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial import ConvexHull
 
+
 __all__ = [
     "axis_directions_from_euler",
     "dz_to_rgb",
@@ -14,7 +15,8 @@ __all__ = [
     "coerce_angle_cols",
     "apply_affine",
     "fit_affine",
-    
+    "invert_affine",
+    "best_corner_pairing",
 ]
 
 def coerce_angle_cols(df, cols=("phi1", "PHI", "phi2")):

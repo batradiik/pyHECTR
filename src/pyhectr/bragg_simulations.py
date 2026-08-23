@@ -1164,7 +1164,7 @@ def fast_StructureFactorForQ(qs, en0='config', temp=0, threshold=1e-3,
 def show_reciprocal_space_plane(mat, exp, ttmax=None, maxqout=0.01, scalef=100, ax=None,
                                 color=None, show_Laue=True, show_legend=True,
                                 projection='perpendicular', label=None, min_intensity=None,
-                                sf_threshold=None, q_max=None, **kwargs):
+                                sf_threshold=1e-5, q_max=None, **kwargs):
     """
     Plots the coplanar diffraction plane with peak positions.
     Uses early rejection of peaks via a structure factor threshold.
