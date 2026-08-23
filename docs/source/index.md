@@ -20,6 +20,7 @@ pyHECTR is research software under active development. Please report any bugs yo
 ```
 
 
+
 ```{toctree}
 :maxdepth: 2
 :caption: Getting started
@@ -55,12 +56,6 @@ examples/index
 api/index
 ```
 
-```{toctree}
-:maxdepth: 2
-:caption: API reference
-
-api/index
-```
 
 
 ## First start

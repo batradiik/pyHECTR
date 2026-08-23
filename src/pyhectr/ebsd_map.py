@@ -68,28 +68,43 @@ def axis_directions_from_euler(df, axis = "Z", euler_cols=("phi1", "PHI", "phi2"
     return dirs / norms
 
 
-def dz_to_rgb(dz, mode = "gamma", gamma = 0.55):
+def dz_to_rgb(dz, mode="gamma", gamma=0.55):
     """
-    Map crystal frame direction cosines (dz) to RGB colours.
+    Map crystal frame direction cosines to RGB colours.
 
     Parameters
     ----------
     dz : ndarray, shape (N, 3)
-        Direction vectors (e.g. Z-axis in crystal frame) for each point.
+        Direction vectors, for example the sample Z-axis expressed in the
+        crystal frame.
     mode : {"simple", "global", "gamma"}, optional
-        - "simple": vector normalization
-            RGB_i = |n_i| / max_j |n_j|
-        - "global": channel contrast stretch
-            each channel stretched to [0,1] over the WHOLE map
-        - "gamma": same as "global" but with extra gamma correction
-            (gamma < 1 increases contrast in low/mid values)
-    gamma : float, optional
-        Gamma exponent used only if mode == "gamma".
+        Colour normalization mode.
+
+        ``"simple"``
+            Normalize each direction by its largest absolute component:
+
+            ``RGB_i = abs(n_i) / max_j(abs(n_j))``
+
+        ``"global"``
+            Stretch each RGB channel independently to the interval ``[0, 1]``
+            using the minimum and maximum values over the complete map.
+
+        ``"gamma"``
+            Apply the same global channel normalization followed by gamma
+            correction. Values of ``gamma < 1`` increase contrast.
+
+    gamma : float, default 0.55
+        Gamma exponent used only when ``mode="gamma"``.
 
     Returns
     -------
     rgb : ndarray, shape (N, 3)
-        RGB colours in [0, 1].
+        RGB values clipped to the interval ``[0, 1]``.
+
+    Raises
+    ------
+    ValueError
+        If ``mode`` is not ``"simple"``, ``"global"``, or ``"gamma"``.
     """
     dz_abs = np.abs(dz)
 

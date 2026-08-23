@@ -248,8 +248,26 @@ def generate_uvw_set(max_index=6):
         ),
     )
 
-def angle_deg(u, v, plane_equiv = True):
-    """Angle in degrees between u and v; if plane_equiv, treat v and -v as identical (|dot|)."""
+
+
+def angle_deg(u, v, plane_equiv=True):
+    """
+    Calculate the angle between two vectors.
+
+    Parameters
+    ----------
+    u, v : array, shape (3,)
+        Input direction vectors.
+    plane_equiv : bool, default True
+        If True, use the absolute value of the normalized dot product so that
+        ``v`` and ``-v`` are treated as the same crystallographic direction
+        line.
+
+    Returns
+    -------
+    angle : float
+        Angle between the vectors in degrees.
+    """
     u = unit(u)
     v = unit(v)
     dot = abs(float(np.dot(u, v))) if plane_equiv else float(np.dot(u, v))

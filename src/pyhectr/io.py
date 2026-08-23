@@ -855,22 +855,22 @@ def ID_31_read_schnucks_h5(folder, pattern="*.h5"):
     ----------
     folder : str or pathlib.Path
         Path to the folder containing the HDF5 files.
-    pattern : str, default="*.h5"
-        File pattern used to select HDF5 files.
+    pattern : str, optional
+        File pattern used to select HDF5 files. Default is ``*.h5``.
 
     Returns
     -------
     data : ndarray
-        Detector images concatenated along the first (frame) axis.
-        The resulting shape is ``(n_frames, n_rows, n_columns)``.
+        Detector images concatenated along the first frame axis, with shape
+        ``(n_frames, n_rows, n_columns)``.
 
     Raises
     ------
     FileNotFoundError
         If no files matching ``pattern`` are found in ``folder``.
     ValueError
-        If a file contains no suitable three dimensional ``data`` dataset
-        or contains multiple matching datasets.
+        If an HDF5 file contains no suitable three dimensional ``data``
+        dataset or contains multiple matching datasets.
     """
     files = sorted(Path(folder).glob(pattern))
 

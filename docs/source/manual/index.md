@@ -16,4 +16,4 @@ surface_cells
 ```
 
 Use the manual for scientific conventions and workflow explanations. Use the
-[API reference](../api/index.rst) for exact function signatures.
+[API reference](../api/index.md) for exact function signatures.

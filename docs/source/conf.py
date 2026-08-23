@@ -45,7 +45,8 @@ myst_heading_anchors = 3
 templates_path = ["_templates"]
 exclude_patterns = [
     "_build",
-    "**.ipynb_checkpoints",
+    "**/.ipynb_checkpoints",
+    "**/.ipynb_checkpoints/*",
 ]
 
 
