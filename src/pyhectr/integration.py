@@ -785,21 +785,6 @@ def rod_points_prep(mask_arr, y_u=None, y_b=None,
     return pixel_coord, mask_new
 
 
-# def find_closest_value_index(arr, value):
-#     """
-#     Return the index of the finite array element closest to `value`.
-#     """
-#     arr = np.asarray(arr, dtype=float)
-
-#     if arr.size == 0:
-#         raise ValueError("arr must be non-empty.")
-#     if not np.isfinite(value):
-#         raise ValueError("value must be finite.")
-#     if not np.any(np.isfinite(arr)):
-#         raise ValueError("arr must contain at least one finite value.")
-
-#     return int(np.nanargmin(np.abs(arr - value)))
-    
 def find_closest_value_index(arr, value):
     """
     Find the index of the element in the array `arr` that is closest to the given `value`.
@@ -811,10 +796,32 @@ def find_closest_value_index(arr, value):
     Returns:
         int: The index of the element closest to the given value.
     """
-    # Calculate the absolute differences between each element and the given value
-    absolute_diff = np.abs(arr - value)
+    arr = np.asarray(arr, dtype=float)
+
+    if arr.size == 0:
+        raise ValueError("arr must be non empty.")
+    if not np.isfinite(value):
+        raise ValueError("value must be finite.")
+    if not np.any(np.isfinite(arr)):
+        raise ValueError("arr must contain at least one finite value.")
+
+    return int(np.nanargmin(np.abs(arr - value)))
     
-    # Find the index of the element with the minimum absolute difference
-    closest_index = np.argmin(absolute_diff)
+# def find_closest_value_index(arr, value):
+#     """
+#     Find the index of the element in the array `arr` that is closest to the given `value`.
     
-    return closest_index
+#     Parameters:
+#         arr (numpy.ndarray): The input array.
+#         value (float): The value to find the closest index to.
+        
+#     Returns:
+#         int: The index of the element closest to the given value.
+#     """
+#     # Calculate the absolute differences between each element and the given value
+#     absolute_diff = np.abs(arr - value)
+    
+#     # Find the index of the element with the minimum absolute difference
+#     closest_index = np.argmin(absolute_diff)
+    
+#     return closest_index

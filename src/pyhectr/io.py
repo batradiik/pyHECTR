@@ -631,7 +631,8 @@ def collect_npy_data_paths(processed_data_path):
     """
     folders = sorted(os.listdir(processed_data_path))
     data_paths = []
-    for folder in folders:
+    # for folder in folders:
+    for file_name in sorted(os.listdir(folder_path)):
         folder_path = os.path.join(processed_data_path, folder)
         if os.path.isdir(folder_path):
             for file_name in os.listdir(folder_path):
