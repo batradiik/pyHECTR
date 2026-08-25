@@ -1,6 +1,8 @@
 from __future__ import annotations
 from pathlib import Path
 import numpy as np
+import xrayutilities as xu
+from numba import njit, prange
 
 
 __all__ = [
@@ -10,7 +12,43 @@ __all__ = [
     "bul_file_string",
     "write_bul",
     "write_xtl",
+    "validate_surface_transform",
+    "parse_xtl",
+    "compute_pairwise_vectors",
+    "find_vectors_with_target_angle_minimal_stream",
+    "find_shortest_normal_vector"
 ]
+
+
+
+
+def validate_surface_transform(transform, hkl):
+    """Validate that the transform represents the requested surface."""
+    matrix = _validate_transform(transform)
+
+    indices = np.asarray(hkl, dtype=float)
+    if indices.shape != (3,) or not np.all(np.isfinite(indices)):
+        raise ValueError("hkl must be a finite vector with shape (3,).")
+
+    rounded = np.rint(indices)
+    if not np.allclose(indices, rounded, atol=1e-12, rtol=0.0):
+        raise ValueError("hkl must contain integer Miller indices.")
+
+    indices = rounded.astype(np.int64)
+    if not np.any(indices):
+        raise ValueError("hkl must not be (0, 0, 0).")
+
+    projections = indices @ matrix
+
+    if projections[0] != 0 or projections[1] != 0:
+        raise ValueError(
+            "The first two transform columns do not lie in the (hkl) plane."
+        )
+
+    if projections[2] <= 0:
+        raise ValueError(
+            "The third transform column must point toward the +hkl side."
+        )
 
 
 def _validate_lattice_vectors(lattice_vectors):
@@ -63,31 +101,73 @@ def _normalize_species(species, n_atoms,):
     return labels
 
 
+# def _validate_transform(transform):
+#     """Return a validated integer-valued ``(3, 3)`` transformation matrix."""
+#     matrix = np.asarray(transform, dtype=float)
+
+#     if matrix.shape != (3, 3):
+#         raise ValueError("transform must have shape (3, 3).")
+
+#     if not np.all(np.isfinite(matrix)):
+#         raise ValueError("transform must contain only finite values.")
+
+#     if not np.allclose(matrix, np.rint(matrix), atol=1e-12, rtol=0.0):
+#         raise ValueError(
+#             "transform must be integer to define a periodic supercell."
+#         )
+
+#     matrix = np.rint(matrix).astype(float)
+#     determinant = np.linalg.det(matrix)
+
+#     if abs(determinant) < 1e-12:
+#         raise ValueError("transform must be non singular.")
+
+#     volume_factor = abs(determinant)
+#     if not np.isclose(volume_factor, round(volume_factor), atol=1e-10):
+#         raise ValueError(
+#             "The absolute determinant of transform must be an integer."
+#         )
+
+#     return matrix
+
+
+def _determinant_3x3(matrix):
+    """Return the exact determinant of a 3×3 integer matrix."""
+    a, b, c = (int(value) for value in matrix[0])
+    d, e, f = (int(value) for value in matrix[1])
+    g, h, i = (int(value) for value in matrix[2])
+
+    return (
+        a * (e * i - f * h)
+        - b * (d * i - f * g)
+        + c * (d * h - e * g)
+    )
+
+
 def _validate_transform(transform):
-    """Return a validated integer-valued ``(3, 3)`` transformation matrix."""
-    matrix = np.asarray(transform, dtype=float)
+    """Return a validated right handed integer transformation matrix."""
+    values = np.asarray(transform, dtype=float)
 
-    if matrix.shape != (3, 3):
-        raise ValueError("transform must have shape (3, 3).")
+    if values.shape != (3, 3):
+        raise ValueError("Transformation must have shape (3, 3).")
 
-    if not np.all(np.isfinite(matrix)):
-        raise ValueError("transform must contain only finite values.")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("Transformation must contain only finite values.")
 
-    if not np.allclose(matrix, np.rint(matrix), atol=1e-12, rtol=0.0):
+    rounded = np.rint(values)
+    if not np.allclose(values, rounded, atol=1e-12, rtol=0.0):
+        raise ValueError("Transformation must be integer valued.")
+
+    matrix = rounded.astype(np.int64)
+    determinant = _determinant_3x3(matrix)
+
+    if determinant == 0:
+        raise ValueError("Transformation must be non singular.")
+
+    if determinant < 0:
         raise ValueError(
-            "transform must be integer to define a periodic supercell."
-        )
-
-    matrix = np.rint(matrix).astype(float)
-    determinant = np.linalg.det(matrix)
-
-    if abs(determinant) < 1e-12:
-        raise ValueError("transform must be non singular.")
-
-    volume_factor = abs(determinant)
-    if not np.isclose(volume_factor, round(volume_factor), atol=1e-10):
-        raise ValueError(
-            "The absolute determinant of transform must be an integer."
+            "Transformation must have positive determinant; "
+            "flip one in-plane column."
         )
 
     return matrix
@@ -146,7 +226,7 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     The function expands every basis atom through the integer lattice
     translations required to populate the transformed cell.
 
-    The transformation follows the row-vector convention used by pyHECTR.
+    The transformation follows the row vector convention used by pyHECTR.
     If ``P`` is ``transform``, its columns contain the coefficients of the
     new lattice vectors in the original basis:
 
@@ -154,7 +234,7 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
 
     Fractional coordinates are transformed as
 
-    ``f_surface = (f_bulk + n) @ P^{-T} + origin_shift``
+    ``f_surface = (f_bulk + n - origin_shift) @ P^{-T}``
 
     where ``n`` is an integer lattice translation. The generated coordinates
     are restricted to the half open interval ``[0, 1)`` in all three
@@ -169,18 +249,18 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     fractional_coordinates : array, shape (N, 3)
         Fractional coordinates of the basis atoms in the bulk cell.
     transform : array, shape (3, 3)
-        Non-singular integer transformation matrix. Its columns define the
+        Non singular integer transformation matrix. Its columns define the
         new lattice vectors in the original lattice basis.
     species : str or sequence of str
         Species labels associated with ``fractional_coordinates``. 
         A single string is broadcast to every basis atom. 
-        For multi-element structures, provide one label per basis atom.
+        For multi element structures, provide one label per basis atom.
     origin_shift : array, shape (3,), optional
         Origin shift in the new fractional basis. This corresponds to the
         ``p`` vector in the VESTA transformation. 
         The default is ``[0, 0, 0]``.
     tolerance : float, default=1e-12
-        Numerical tolerance used for cell-boundary tests and duplicate
+        Numerical tolerance used for cell boundary tests and duplicate
         removal.
     check_atom_count : bool, default=True
         If ``True``, verify that the generated number of atoms equals
@@ -199,7 +279,7 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     ------
     ValueError
         If input shapes are inconsistent, the transformation is singular or
-        non-integer, or ``tolerance`` is invalid.
+        non integer, or ``tolerance`` is invalid.
     RuntimeError
         If ``check_atom_count`` is enabled and the generated atom count does
         not match the expected supercell multiplicity.
@@ -241,14 +321,34 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     if not np.isfinite(tolerance) or not 0.0 < tolerance < 1.0:
         raise ValueError("tolerance must be a finite number between 0 and 1.")
 
+    min_tolerance = 100 * np.finfo(float).eps
+    if (
+        not np.isfinite(tolerance)
+        or not min_tolerance <= tolerance < 0.5
+    ):
+        raise ValueError(
+            f"tolerance must be between {min_tolerance:g} and 0.5."
+        )
+    # if origin_shift is None:
+    #     shift_origin = np.zeros(3, dtype=float)
+    # else:
+    #     shift_origin = np.asarray(origin_shift, dtype=float)
+    #     if shift_origin.shape != (3,):
+    #         raise ValueError("origin shift must have shape (3,).")
+    #     if not np.all(np.isfinite(shift_origin)):
+    #         raise ValueError("origin shift must contain only finite values.")
     if origin_shift is None:
-        shift_origin = np.zeros(3, dtype=float)
+        origin_old = np.zeros(3, dtype=float)
     else:
-        shift_origin = np.asarray(origin_shift, dtype=float)
-        if shift_origin.shape != (3,):
-            raise ValueError("origin shift must have shape (3,).")
-        if not np.all(np.isfinite(shift_origin)):
-            raise ValueError("origin shift must contain only finite values.")
+        origin_old = np.asarray(origin_shift, dtype=float)
+    
+        if origin_old.shape != (3,):
+            raise ValueError("origin_shift must have shape (3,).")
+    
+        if not np.all(np.isfinite(origin_old)):
+            raise ValueError("origin_shift must contain only finite values.")
+
+    shift_surface = -origin_old @ inverse_transpose
 
     surface_lattice = matrix.T @ lattice
     inverse_transpose = np.linalg.inv(matrix).T
@@ -257,10 +357,14 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     # lies in [-origin_shift, 1-origin_shift). Mapping the eight corners of
     # this region back through P.T gives tight bounds for the old cell lattice
     # translations that can contribute atoms to the transformed cell.
+    # corner_values = [
+    #     (-shift_origin[index], 1.0 - shift_origin[index])
+    #     for index in range(3)
+    # ]
     corner_values = [
-        (-shift_origin[index], 1.0 - shift_origin[index])
+        (-shift_surface[index], 1.0 - shift_surface[index])
         for index in range(3)
-    ]
+        ]
     new_frame_corners = np.array(
         [
             [x, y, z]
@@ -295,8 +399,9 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
 
         candidates = (
             (basis_coordinate + translations) @ inverse_transpose
-            + shift_origin
+            + shift_surface
         )
+        
 
         inside = np.all(
             (candidates >= -tolerance) & (candidates < 1.0 - tolerance),
@@ -656,3 +761,307 @@ def generate_surface_files(
         "expected_atoms": expected_atoms,
         "files": files,
     }
+
+
+
+
+def parse_xtl(filename):
+    """
+    Read fractional atomic coordinates from a VESTA XTL file.
+
+    The parser searches for the ``ATOMS`` section and reads coordinates from
+    the following atom table until an empty line or ``EOF`` is reached.
+
+    Parameters
+    ----------
+    filename : str or path-like
+        Path to the ``.xtl`` file.
+
+    Returns
+    -------
+    atoms : ndarray, shape (N, 3)
+        Atomic positions as stored in the XTL file.
+
+    """
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+    
+    atoms = []
+    start_index = None
+    for i, line in enumerate(lines):
+        if line.strip().upper().startswith("ATOMS"):
+            start_index = i + 2  # skip header line after "ATOMS"
+            break
+    if start_index is None:
+        raise ValueError("Could not find the ATOMS section in the file.")
+    
+    for line in lines[start_index:]:
+        if line.strip() == "" or line.strip().startswith("EOF"):
+            break
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        pos = np.array([float(parts[1]), float(parts[2]), float(parts[3])])
+        atoms.append(pos)
+    
+    return np.array(atoms)
+
+
+def compute_pairwise_vectors(atoms):
+    """
+    Compute all unique pairwise displacement vectors.
+
+    Parameters
+    ----------
+    atoms : ndarray, shape (N, 3)
+        Atomic coordinates. These may be fractional or Cartesian, but the output
+        vectors and areas will use the same coordinate system.
+
+    Returns
+    -------
+    pairs : ndarray, shape (M, 2)
+        Atom index pairs ``(i, j)`` with ``i < j``.
+
+    vecs : ndarray, shape (M, 3)
+        Displacement vectors ``atoms[j] - atoms[i]``.
+
+    Notes
+    -----
+    The number of returned vectors is ``M = N * (N - 1) / 2``. The later
+    angle search step can still be expensive because it compares vector pairs.
+    """
+    n = len(atoms)
+    idx_i, idx_j = np.triu_indices(n, 1)        # upper-triangle indices
+    vecs = atoms[idx_j] - atoms[idx_i]
+    pairs = np.stack((idx_i, idx_j), axis=1)
+    return pairs, vecs
+
+
+
+@njit(fastmath=True, parallel=True)
+def _scan_block(u_unit,  v_unit,    # (p,3) and (q,3)  –‑ normalised vectors
+                u_full,  v_full,    # (p,3) and (q,3)  –‑ original vectors
+                cos_t, tol,         # target cos θ and tolerance
+                ns, surface_tol,    # surface‑normal (unit) & tolerance
+                want_surface,       # bool
+                same_block):        # True if this is a diagonal tile
+    p, q = u_unit.shape[0], v_unit.shape[0]
+    # thread‑local best
+    best_area_i = np.full(p, 1e30)
+    best_j_i    = np.full(p, -1,  dtype=np.int64)
+
+    for i in prange(p):                       # ← parallel over i
+        
+        best_a  = 1e30
+        best_j  = -1
+
+        uu0, uu1, uu2 = u_unit[i]     # unit vector components
+        uf0, uf1, uf2 = u_full[i]     # full‑length components
+        
+        for j in range(q):
+            if same_block and j <= i:         # skip lower triangle
+                continue
+            dot = uu0 * v_unit[j,0] + uu1 * v_unit[j,1] + uu2 * v_unit[j,2]
+            if abs(dot - cos_t) >= tol:
+                continue
+
+            # optional surface‑normal constraint
+            if want_surface:
+                cx = uu1 * v_unit[j,2] - uu2 * v_unit[j,1]
+                cy = uu2 * v_unit[j,0] - uu0 * v_unit[j,2]
+                cz = uu0 * v_unit[j,1] - uu1 * v_unit[j,0]
+                mag = (cx*cx + cy*cy + cz*cz)**0.5
+                if mag < 1e-12:
+                    continue
+                if abs((cx*ns[0]+cy*ns[1]+cz*ns[2]) / mag) < 1.0 - surface_tol:
+                    continue
+
+            # area with *original* (unnormalised) vectors
+            vf0, vf1, vf2 = v_full[j]
+            cx = uf1 * vf2 - uf2 * vf1
+            cy = uf2 * vf0 - uf0 * vf2
+            cz = uf0 * vf1 - uf1 * vf0
+            area = (cx*cx + cy*cy + cz*cz)**0.5
+
+            if area < best_a:
+                best_a, best_j = area, j
+        best_area_i[i] = best_a
+        best_j_i[i]    = best_j
+
+    # sequential reduction (tiny cost, outside prange)
+    g_best = 1e30
+    gi = gj = -1
+    for i in range(p):
+        if best_j_i[i] != -1 and best_area_i[i] < g_best:
+            g_best, gi, gj = best_area_i[i], i, best_j_i[i]
+    return gi, gj, g_best
+
+
+def find_vectors_with_target_angle_minimal_stream(
+        pairs, vecs,
+        target_angle=90.0,
+        tol_angle=1e-5,
+        surface_normal=None,
+        surface_tol=1e-5,
+        block=10_000):
+    """
+    Find the matching vector pair with the smallest parallelogram area.
+
+    The function scans the upper triangle of the vector-vector comparison
+    matrix in blocks, avoiding construction of the full dense dot-product
+    matrix in memory.
+
+    Parameters
+    ----------
+    pairs : ndarray, shape (M, 2)
+        Atom index pairs returned by `compute_pairwise_vectors`.
+
+    vecs : ndarray, shape (M, 3)
+        Displacement vectors returned by `compute_pairwise_vectors`.
+
+    target_angle : float, default=90.0
+        Target angle between two vectors, in degrees.
+
+    tol_angle : float, default=1e-5
+        Tolerance in cosine space. A pair is accepted when
+        ``abs(dot(unit_vec1, unit_vec2) - cos(target_angle)) < tol_angle``.
+
+    surface_normal : array, shape (3,), optional
+        If given, the cross product of the two vectors must be collinear with
+        this normal.
+
+    surface_tol : float, default=1e-5
+        Collinearity tolerance for the surface-normal constraint. A pair is
+        accepted when ``abs(dot(cross_hat, normal_hat)) >= 1 - surface_tol``.
+
+    block : int, default=10_000
+        Tile size used during the blocked scan.
+
+    Returns
+    -------
+    matches : list
+        Empty list if no match is found. Otherwise returns one tuple:
+        ``(pair1, pair2, vec1, vec2, actual_angle, area)``.
+    """
+    # ── pre‑compute unit vectors & constants ────────────────────────────
+    cos_t   = np.cos(np.deg2rad(target_angle))
+    norms   = np.linalg.norm(vecs, axis=1)
+    valid = norms > 1e-12
+    pairs = pairs[valid]
+    vecs = vecs[valid]
+    norms = norms[valid]
+    
+    v_unit  = vecs / norms[:, None]
+
+    want_surface = surface_normal is not None
+    if want_surface:
+        ns = np.asarray(surface_normal, float)
+        ns /= np.linalg.norm(ns)
+    else:
+        ns = np.zeros(3)
+
+    best_area      = np.inf
+    best_global_i  = -1
+    best_global_j  = -1
+
+    N = len(vecs)
+    nvec = len(vecs)
+    border = "="*80
+    # ── tile over the upper triangle  ───────────────────────────────────
+    total_pairs_min = nvec * (nvec - 1) // 2
+    #pbar_min = tqdm(total=total_pairs_min, desc="angle scan [minimal]", unit="pair")
+    for ib in range(0, N, block):
+        iu_end   = min(ib + block, N)
+        u_unit   = v_unit[ib:iu_end]       # (p,3)  p ≤ block
+        u_orig   = vecs  [ib:iu_end]
+
+        for jb in range(ib, N, block):
+            jv_end   = min(jb + block, N)
+            v_unit_blk = v_unit[jb:jv_end]     # (q,3)
+            v_orig_blk = vecs  [jb:jv_end]
+
+            same_block = (ib == jb)
+
+            # call the NUMBA kernel 
+            bi, bj, area = _scan_block(u_unit, v_unit_blk,
+                                       u_orig, v_orig_blk,
+                                       cos_t, tol_angle,
+                                       ns, surface_tol,
+                                       want_surface, same_block)
+
+            if bi >= 0 and area < best_area:
+                best_area      = area
+                best_global_i  = ib + bi
+                best_global_j  = jb + bj
+                print(f"{best_area = }\n{best_global_i = }, {best_global_j = }\n{border}\n\n")
+            #pbar_min.update(1)
+
+    # return result in the same format as the reference implementation 
+    if best_global_i < 0:
+        #pbar_min.close()
+        return []                              # no match
+
+    actual_dot = np.dot(v_unit[best_global_i], v_unit[best_global_j])
+    actual_angle = np.degrees(np.arccos(np.clip(actual_dot, -1.0, 1.0)))
+    #pbar_min.close()
+    return [(
+        tuple(pairs[best_global_i]),
+        tuple(pairs[best_global_j]),
+        vecs[best_global_i],
+        vecs[best_global_j],
+        actual_angle,                                 
+        best_area
+    )]
+
+
+
+def find_shortest_normal_vector(pairs, vecs,
+                                plane_vec1, plane_vec2,
+                                normal=(3, 2, 6),
+                                col_tol=1e-6):
+    """
+    Find the shortest displacement vector collinear with a target normal.
+
+    Parameters
+    ----------
+    pairs : ndarray, shape (M, 2)
+        Atom index pairs returned by `compute_pairwise_vectors`.
+
+    vecs : ndarray, shape (M, 3)
+        Displacement vectors returned by `compute_pairwise_vectors`.
+
+    plane_vec1, plane_vec2 : array, shape (3,)
+        In-plane vectors defining the surface basis.
+
+    normal : array, shape (3,), default=(3, 2, 6)
+        Target normal direction.
+
+    col_tol : float, default=1e-6
+        Collinearity tolerance based on ``sin(theta)``.
+
+    Returns
+    -------
+    result : tuple or None
+        ``(atom_pair, vector)`` for the shortest matching vector, or ``None``
+        if no matching vector is found.
+    """
+    n = np.asarray(normal, float)
+    n /= np.linalg.norm(n)
+
+    # collinearity test (sinθ ≈ |cross|/(|v||n|))
+    sin_theta = np.linalg.norm(np.cross(vecs, n), axis=1) / np.linalg.norm(vecs, axis=1)
+    mask = sin_theta < col_tol
+    if not mask.any():
+        return None
+
+    cand_pairs = pairs[mask]
+    cand_vecs  = vecs [mask]
+
+    # orient so cross(a,b)·v > 0  (right-handed)
+    area_vec = np.cross(plane_vec1, plane_vec2)
+    sign = np.sign(cand_vecs @ area_vec)
+    cand_vecs *= sign[:, None]
+
+    lengths = np.linalg.norm(cand_vecs, axis=1)
+    k = np.argmin(lengths)
+    return tuple(cand_pairs[k]), cand_vecs[k]
