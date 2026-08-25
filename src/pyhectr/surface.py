@@ -1,7 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
 import numpy as np
-import xrayutilities as xu
 from numba import njit, prange
 
 
@@ -256,9 +255,9 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
         A single string is broadcast to every basis atom. 
         For multi element structures, provide one label per basis atom.
     origin_shift : array, shape (3,), optional
-        Origin shift in the new fractional basis. This corresponds to the
-        ``p`` vector in the VESTA transformation. 
-        The default is ``[0, 0, 0]``.
+        Origin shift in the original bulk fractional basis. This corresponds
+        to the ``p`` vector in the VESTA transformation. The default is
+        ``[0, 0, 0]``.
     tolerance : float, default=1e-12
         Numerical tolerance used for cell boundary tests and duplicate
         removal.
@@ -343,18 +342,14 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
 
     shift_surface = -origin_old @ inverse_transpose
 
-    # f_surface lies in [0, 1). Therefore g = f_surface - origin_shift
-    # lies in [-origin_shift, 1-origin_shift). Mapping the eight corners of
+    # f_surface lies in [0, 1). Therefore g = f_surface - shift_surface
+    # lies in [-shift_surface, 1-shift_surface). Mapping the eight corners of
     # this region back through P.T gives tight bounds for the old cell lattice
     # translations that can contribute atoms to the transformed cell.
-    # corner_values = [
-    #     (-shift_origin[index], 1.0 - shift_origin[index])
-    #     for index in range(3)
-    # ]
     corner_values = [
         (-shift_surface[index], 1.0 - shift_surface[index])
         for index in range(3)
-        ]
+    ]
     new_frame_corners = np.array(
         [
             [x, y, z]
@@ -618,6 +613,7 @@ def write_xtl(filename, lattice_vectors,
         )
         for label, (x, y, z) in zip(labels, coordinates)
     )
+    lines.append("EOF")
 
     path = Path(filename)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -796,7 +792,8 @@ def parse_xtl(filename):
         raise ValueError("Could not find the ATOMS section in the file.")
     
     for line in lines[start_index:]:
-        if line.strip() == "" or line.strip().startswith("EOF"):
+        stripped = line.strip()
+        if stripped == "" or stripped.upper().startswith("EOF"):
             break
         parts = line.split()
         if len(parts) < 4:
@@ -903,7 +900,8 @@ def find_vectors_with_target_angle_minimal_stream(
         tol_angle=1e-5,
         surface_normal=None,
         surface_tol=1e-5,
-        block=10_000):
+        block=10_000,
+        verbose=False):
     """
     Find the matching vector pair with the smallest parallelogram area.
 
@@ -936,6 +934,8 @@ def find_vectors_with_target_angle_minimal_stream(
 
     block : int, default=10_000
         Tile size used during the blocked scan.
+    verbose : bool, default=False
+        If ``True``, print every time a lower-area match is found.
 
     Returns
     -------
@@ -943,6 +943,12 @@ def find_vectors_with_target_angle_minimal_stream(
         Empty list if no match is found. Otherwise returns one tuple:
         ``(pair1, pair2, vec1, vec2, actual_angle, area)``.
     """
+    if block <= 0:
+        raise ValueError("block must be a positive integer.")
+
+    pairs = np.asarray(pairs)
+    vecs = np.asarray(vecs, dtype=float)
+
     # ── pre‑compute unit vectors & constants ────────────────────────────
     cos_t   = np.cos(np.deg2rad(target_angle))
     norms   = np.linalg.norm(vecs, axis=1)
@@ -950,13 +956,19 @@ def find_vectors_with_target_angle_minimal_stream(
     pairs = pairs[valid]
     vecs = vecs[valid]
     norms = norms[valid]
+
+    if len(vecs) < 2:
+        return []
     
     v_unit  = vecs / norms[:, None]
 
     want_surface = surface_normal is not None
     if want_surface:
         ns = np.asarray(surface_normal, float)
-        ns /= np.linalg.norm(ns)
+        ns_norm = np.linalg.norm(ns)
+        if ns_norm < 1e-12:
+            raise ValueError("surface_normal must be non-zero.")
+        ns /= ns_norm
     else:
         ns = np.zeros(3)
 
@@ -965,10 +977,7 @@ def find_vectors_with_target_angle_minimal_stream(
     best_global_j  = -1
 
     N = len(vecs)
-    nvec = len(vecs)
-    border = "="*80
     # ── tile over the upper triangle  ───────────────────────────────────
-    total_pairs_min = nvec * (nvec - 1) // 2
     #pbar_min = tqdm(total=total_pairs_min, desc="angle scan [minimal]", unit="pair")
     for ib in range(0, N, block):
         iu_end   = min(ib + block, N)
@@ -993,7 +1002,11 @@ def find_vectors_with_target_angle_minimal_stream(
                 best_area      = area
                 best_global_i  = ib + bi
                 best_global_j  = jb + bj
-                print(f"{best_area = }\n{best_global_i = }, {best_global_j = }\n{border}\n\n")
+                if verbose:
+                    print(
+                        f"{best_area = }\n"
+                        f"{best_global_i = }, {best_global_j = }\n"
+                    )
             #pbar_min.update(1)
 
     # return result in the same format as the reference implementation 
@@ -1074,4 +1087,3 @@ def find_shortest_normal_vector(pairs, vecs,
     lengths = np.linalg.norm(cand_vecs, axis=1)
     k = np.argmin(lengths)
     return tuple(cand_pairs[k]), cand_vecs[k]
-
