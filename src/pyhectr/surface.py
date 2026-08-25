@@ -318,9 +318,6 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     labels  = _normalize_species(species, len(basis))
     matrix  = _validate_transform(transform)
 
-    if not np.isfinite(tolerance) or not 0.0 < tolerance < 1.0:
-        raise ValueError("tolerance must be a finite number between 0 and 1.")
-
     min_tolerance = 100 * np.finfo(float).eps
     if (
         not np.isfinite(tolerance)
@@ -329,14 +326,10 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
         raise ValueError(
             f"tolerance must be between {min_tolerance:g} and 0.5."
         )
-    # if origin_shift is None:
-    #     shift_origin = np.zeros(3, dtype=float)
-    # else:
-    #     shift_origin = np.asarray(origin_shift, dtype=float)
-    #     if shift_origin.shape != (3,):
-    #         raise ValueError("origin shift must have shape (3,).")
-    #     if not np.all(np.isfinite(shift_origin)):
-    #         raise ValueError("origin shift must contain only finite values.")
+
+    surface_lattice = matrix.T @ lattice
+    inverse_transpose = np.linalg.inv(matrix).T
+    
     if origin_shift is None:
         origin_old = np.zeros(3, dtype=float)
     else:
@@ -349,9 +342,6 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
             raise ValueError("origin_shift must contain only finite values.")
 
     shift_surface = -origin_old @ inverse_transpose
-
-    surface_lattice = matrix.T @ lattice
-    inverse_transpose = np.linalg.inv(matrix).T
 
     # f_surface lies in [0, 1). Therefore g = f_surface - origin_shift
     # lies in [-origin_shift, 1-origin_shift). Mapping the eight corners of
@@ -378,8 +368,8 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
     lower_corner = old_frame_corners.min(axis=0)
     upper_corner = old_frame_corners.max(axis=0)
 
-    generated_coordinates: list[np.ndarray] = []
-    generated_species: list[str] = []
+    generated_coordinates = []
+    generated_species     = []
 
     for basis_coordinate, label in zip(basis, labels):
         lower_translation = np.ceil(
@@ -416,15 +406,15 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
 
     if not generated_coordinates:
         surface_coordinates = np.empty((0, 3), dtype=float)
-        surface_species: list[str] = []
+        surface_species = []
     else:
         coordinates_array = np.asarray(generated_coordinates, dtype=float)
 
         # Remove only numerical duplicates of the same species. Different
         # species at the same coordinates are preserved
         quantized = np.rint(coordinates_array / tolerance).astype(np.int64)
-        keep_indices: list[int] = []
-        seen: set[tuple[object, ...]] = set()
+        keep_indices = []
+        seen = set()
 
         for index, (coordinate_key, label) in enumerate(
             zip(quantized, generated_species)
@@ -438,7 +428,8 @@ def generate_surface_cell(lattice_vectors, fractional_coordinates,
         surface_species = [generated_species[index] for index in keep_indices]
 
     if check_atom_count:
-        volume_factor = int(round(abs(np.linalg.det(matrix))))
+        # volume_factor = int(round(abs(np.linalg.det(matrix))))
+        volume_factor = _determinant_3x3(matrix)
         expected_atoms = len(basis) * volume_factor
         actual_atoms = len(surface_coordinates)
 
@@ -640,7 +631,7 @@ def generate_surface_files(
     file_stem = None, title = None,
     comment = None, save_xtl = True,
     save_bul = True, save_positive_bul = True,
-    bul_z_shift = -1.0, sort_by_z = True,):
+    bul_z_shift = -1.0, sort_by_z = True, hkl = None,):
     """Generate a surface cell and optionally write XTL/BUL files.
 
     This is a wrapper around ``generate_surface_cell``,
@@ -654,6 +645,10 @@ def generate_surface_files(
         surface label, for example ``"539"`` or ``"6_4_11"``.
     transform : array-like, shape (3, 3)
         Integer transformation matrix passed to ``generate_surface_cell``.
+    hkl : array-like, shape (3,), optional
+        Miller index normal used to validate the transformation. If supplied,
+        the first two columns of ``transform`` must lie in the ``(hkl)`` plane
+        and the third column must point toward ``+hkl``.
     lattice_vectors : array-like, shape (3, 3)
         Bulk Cartesian lattice vectors in angstrom, stored as rows.
     fractional_coordinates : array-like, shape (N, 3)
@@ -700,16 +695,20 @@ def generate_surface_files(
     if comment is None:
         comment = f"# Surface ({label})"
 
+    matrix = _validate_transform(transform)
+    if hkl is not None:
+        validate_surface_transform(matrix, hkl)
+
     surface_lattice, surface_fractional, surface_species = generate_surface_cell(
         lattice_vectors=lattice_vectors,
         fractional_coordinates=fractional_coordinates,
-        transform=transform,
+        transform=matrix,
         species=species,
     )
 
     expected_atoms = (
         len(fractional_coordinates)
-        * int(round(abs(np.linalg.det(transform))))
+        * _determinant_3x3(matrix)
     )
 
     if len(surface_fractional) != expected_atoms:
@@ -761,6 +760,7 @@ def generate_surface_files(
         "expected_atoms": expected_atoms,
         "files": files,
     }
+
 
 
 
@@ -831,7 +831,7 @@ def compute_pairwise_vectors(atoms):
     angle search step can still be expensive because it compares vector pairs.
     """
     n = len(atoms)
-    idx_i, idx_j = np.triu_indices(n, 1)        # upper-triangle indices
+    idx_i, idx_j = np.triu_indices(n, 1)        # upper triangle indices
     vecs = atoms[idx_j] - atoms[idx_i]
     pairs = np.stack((idx_i, idx_j), axis=1)
     return pairs, vecs
@@ -839,24 +839,24 @@ def compute_pairwise_vectors(atoms):
 
 
 @njit(fastmath=True, parallel=True)
-def _scan_block(u_unit,  v_unit,    # (p,3) and (q,3)  –‑ normalised vectors
-                u_full,  v_full,    # (p,3) and (q,3)  –‑ original vectors
-                cos_t, tol,         # target cos θ and tolerance
-                ns, surface_tol,    # surface‑normal (unit) & tolerance
+def _scan_block(u_unit,  v_unit,    # (p,3) and (q,3)  – normalised vectors
+                u_full,  v_full,    # (p,3) and (q,3)  – original vectors
+                cos_t, tol,         # target cos  and tolerance
+                ns, surface_tol,    # surface normal (unit) & tolerance
                 want_surface,       # bool
                 same_block):        # True if this is a diagonal tile
     p, q = u_unit.shape[0], v_unit.shape[0]
-    # thread‑local best
+    # thread local best
     best_area_i = np.full(p, 1e30)
     best_j_i    = np.full(p, -1,  dtype=np.int64)
 
-    for i in prange(p):                       # ← parallel over i
+    for i in prange(p):                       #  parallel over i
         
         best_a  = 1e30
         best_j  = -1
 
         uu0, uu1, uu2 = u_unit[i]     # unit vector components
-        uf0, uf1, uf2 = u_full[i]     # full‑length components
+        uf0, uf1, uf2 = u_full[i]     # full length components
         
         for j in range(q):
             if same_block and j <= i:         # skip lower triangle
@@ -865,7 +865,7 @@ def _scan_block(u_unit,  v_unit,    # (p,3) and (q,3)  –‑ normalised vectors
             if abs(dot - cos_t) >= tol:
                 continue
 
-            # optional surface‑normal constraint
+            # optional surface normal constraint
             if want_surface:
                 cx = uu1 * v_unit[j,2] - uu2 * v_unit[j,1]
                 cy = uu2 * v_unit[j,0] - uu0 * v_unit[j,2]
@@ -876,7 +876,7 @@ def _scan_block(u_unit,  v_unit,    # (p,3) and (q,3)  –‑ normalised vectors
                 if abs((cx*ns[0]+cy*ns[1]+cz*ns[2]) / mag) < 1.0 - surface_tol:
                     continue
 
-            # area with *original* (unnormalised) vectors
+            # area with unnormalised vectors
             vf0, vf1, vf2 = v_full[j]
             cx = uf1 * vf2 - uf2 * vf1
             cy = uf2 * vf0 - uf0 * vf2
@@ -908,7 +908,7 @@ def find_vectors_with_target_angle_minimal_stream(
     Find the matching vector pair with the smallest parallelogram area.
 
     The function scans the upper triangle of the vector-vector comparison
-    matrix in blocks, avoiding construction of the full dense dot-product
+    matrix in blocks, avoiding construction of the full dense dot product
     matrix in memory.
 
     Parameters
@@ -1046,10 +1046,19 @@ def find_shortest_normal_vector(pairs, vecs,
         if no matching vector is found.
     """
     n = np.asarray(normal, float)
-    n /= np.linalg.norm(n)
+    n_norm = np.linalg.norm(n)
+    if n_norm < 1e-12:
+        raise ValueError("normal must be non-zero.")
+    n /= n_norm
 
     # collinearity test (sinθ ≈ |cross|/(|v||n|))
-    sin_theta = np.linalg.norm(np.cross(vecs, n), axis=1) / np.linalg.norm(vecs, axis=1)
+    lengths_all = np.linalg.norm(vecs, axis=1)
+    valid = lengths_all > 1e-12
+    sin_theta = np.full(len(vecs), np.inf)
+    sin_theta[valid] = (
+        np.linalg.norm(np.cross(vecs[valid], n), axis=1)
+        / lengths_all[valid]
+    )
     mask = sin_theta < col_tol
     if not mask.any():
         return None
@@ -1059,9 +1068,10 @@ def find_shortest_normal_vector(pairs, vecs,
 
     # orient so cross(a,b)·v > 0  (right-handed)
     area_vec = np.cross(plane_vec1, plane_vec2)
-    sign = np.sign(cand_vecs @ area_vec)
-    cand_vecs *= sign[:, None]
+    orient = np.where(cand_vecs @ area_vec < 0, -1.0, 1.0)
+    cand_vecs = cand_vecs * orient[:, None]
 
     lengths = np.linalg.norm(cand_vecs, axis=1)
     k = np.argmin(lengths)
     return tuple(cand_pairs[k]), cand_vecs[k]
+
