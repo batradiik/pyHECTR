@@ -12,8 +12,8 @@ integration
 mask_nn
 ebsd_polycrystal
 polyxsim
-grainspotter
 surface_cells
+grainspotter
 ```
 
 Use the manual for scientific conventions and workflow explanations. Use the
