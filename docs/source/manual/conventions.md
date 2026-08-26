@@ -61,3 +61,53 @@ with:
 4. the ordering of omega values.
 
 The image stack and omega array must describe the same frame order.
+
+
+## ImageD11 and GrainSpotter detector coordinates
+
+ImageD11 peak search must run on the same rotated and cropped image stack that is
+later displayed. For the flat `.spt` and `.flt` peak tables, pyHECTR selects
+detector coordinates in this order:
+
+```text
+(fc, sc) -> (f_raw, s_raw) -> (detz, dety) -> (f, s)
+```
+
+The first value is plotted as x / image column and the second as y / image row.
+Use `origin="upper"` when row zero is displayed at the top of the image.
+
+The omega value stored for every peak is matched to the nearest measured frame.
+The matching tolerance should normally be slightly larger than half the measured
+omega step.
+
+## Peak identity through the indexing workflow
+
+The merged ImageD11 `.flt` table is used for detector overlays because its
+`spot3d_id` is propagated through the `.gve` file and appears as GrainSpotter
+`peak_id` in `grains.log`.
+
+The plotting tables are joined through this identifier:
+
+```text
+ImageD11 .flt spot3d_id
+        -> .gve peak identifier
+        -> GrainSpotter grains.log peak_id
+```
+
+If an indexed grain overlay is empty, check the overlap of these identifiers
+before changing detector coordinates.
+
+## GrainSpotter orientation matrices
+
+The GrainSpotter parser treats `U` as the orientation matrix and `UBI` as
+
+```text
+UBI = inverse(U B)
+```
+
+For a specimen unit vector `e`, the current orientation summary uses:
+
+```text
+crystal direction       = U.T @ e
+fractional plane normal = UBI @ e
+```

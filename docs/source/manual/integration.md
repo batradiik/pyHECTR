@@ -68,7 +68,7 @@ Available modes:
 - `medfilt` — sliding median;
 - `als` — asymmetric least squares.
 
-## Two-dimensional detector corrections
+## Two dimensional detector corrections
 
 ```python
 correction_map = integration.apply_corrections2D(

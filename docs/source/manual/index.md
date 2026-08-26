@@ -12,6 +12,7 @@ integration
 mask_nn
 ebsd_polycrystal
 polyxsim
+grainspotter
 surface_cells
 ```
 

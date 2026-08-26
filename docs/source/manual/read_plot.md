@@ -119,6 +119,53 @@ read_plot.image_slider_Q(
 )
 ```
 
+
+
+## ImageD11 and GrainSpotter overlays
+
+Overlay merged ImageD11 peaks on the measured detector frames with:
+
+```python
+state = read_plot.image_slider_with_spt(
+    images=data,
+    omegas=omegas,
+    peaks_by_frame=peaks_by_frame,
+    vmax=950,
+    size_by="npix",
+    annotate=True,
+    origin="upper",
+)
+```
+
+`peaks_by_frame` is produced by
+`pyhectr.grainspotter.group_peaks_by_frame`. The viewer uses ImageD11 coordinate
+pairs such as `(fc, sc)` and provides slider, button, and keyboard navigation.
+
+After GrainSpotter indexing, show the reflections assigned to one grain on the
+maximum projection:
+
+```python
+state = read_plot.grain_slider_on_max_image(
+    max_image=data.max(axis=0),
+    refl_df=reflections,
+    spot_df=spots,
+    orient_df=orientations,
+    vmax=200,
+    origin="upper",
+    annotate=True,
+    preferred_axis="z",
+)
+```
+
+The expected table indices are:
+
+- `reflections`: `(grain_id, peak_id)`;
+- `spots`: `peak_id`;
+- `orientations`: `(grain_id, axis)`.
+
+See [ImageD11 and GrainSpotter indexing](grainspotter.md) for the complete file
+pipeline and table construction.
+
 ## MP4 movies
 
 ```python
