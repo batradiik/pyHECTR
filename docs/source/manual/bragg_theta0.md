@@ -1,8 +1,8 @@
-# Theoretical Bragg peaks and theta-offset refinement
+# Theoretical Bragg peaks and theta offset refinement
 
 The P07 preparation example uses theoretical reflection positions to label selected detector features and refine a constant azimuthal offset.
 
-## Theoretical reciprocal-space map
+## Theoretical reciprocal space map
 
 `show_reciprocal_space_plane` calculates allowed reflections, transforms their
 reciprocal space vectors into the structure factors, and plots the diffraction plane.
