@@ -2,7 +2,7 @@ import imageio
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
+from matplotlib.widgets import Slider, Button
 from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FFMpegWriter
 import imageio_ffmpeg
@@ -15,6 +15,9 @@ __all__ = [
     "image_slider_Q",
     "image_movie",
     "image_mask_movie",
+    "image_slider_with_spt",
+    "grain_slider_on_max_image"
+    
 ]
 
 
@@ -569,3 +572,364 @@ def image_mask_movie(images, masks, output_file="image_mask_movie.mp4",
                 writer.grab_frame()
 
     plt.close(fig)
+
+
+
+
+def image_slider_with_spt(images, omegas, peaks_by_frame,
+                          fig_size=(7,7), vmax=20, cmap='viridis',
+                          size_by='npix', annotate=False,
+                          origin = 'lower'):
+    """
+    Improved interactive image slider with stable callbacks and Next/Prev buttons.
+    Returns a state dict (keeps references alive).
+    """
+    N, H, W = images.shape
+    fig, ax = plt.subplots(1, 1, figsize=fig_size)
+    # show first image
+    im = ax.imshow(images[0], cmap=cmap, vmax=vmax, origin=origin)
+    scat = ax.scatter([], [], s=30, facecolors='none', edgecolors='r', linewidths=0.8)
+    txt = ax.text(0.01, 0.99, '', transform=ax.transAxes, ha='left', va='top',
+                  fontsize=9, bbox=dict(fc='white', alpha=0.6, ec='none'))
+    annots = []
+
+    # Slider axes
+    ax_slider = plt.axes([0.1, 0.01, 0.65, 0.03])
+    slider = Slider(ax_slider, 'Image Index', 0, N-1, valinit=0, valstep=1, valfmt='%0.0f')
+
+    # Helper to pick coordinates (prefer corrected fc/sc; else raw f/s; else detz/dety)
+    def get_xy(p):
+        if 'fc' in p and 'sc' in p:
+            return p['fc'], p['sc']
+        if 'f_raw' in p and 's_raw' in p:
+            return p['f_raw'], p['s_raw']
+        if 'detz' in p and 'dety' in p:
+            return p['detz'], p['dety']
+        if 'f' in p and 's' in p:
+            return p['f'], p['s']
+        return None, None
+
+    def update(val):
+        i = int(np.round(val))
+        # update image reliably
+        im.set_data(images[i])
+
+        # remove previous annotations
+        if annots:
+            for a in annots:
+                try:
+                    a.remove()
+                except Exception:
+                    pass
+            annots.clear()
+
+        peaks = peaks_by_frame.get(i, [])
+        if peaks:
+            xs, ys, sizes, valid_peaks = [], [], [], []
+            for p in peaks:
+                x, y = get_xy(p)
+                if x is None:
+                    continue
+                xs.append(x)
+                ys.append(y)
+                valid_peaks.append(p)
+                if size_by == 'npix':
+                    npix = p.get('number_of_pixels', p.get('npix', None))
+                    if npix is None:
+                        npix = 10.0
+                    sizes.append(10.0 + 2.0*np.sqrt(float(npix)))
+                elif size_by == 'avg':
+                    avg = p.get('avg_intensity', p.get('average_counts', 0.0))
+                    sizes.append(10.0 + 0.02*float(avg))
+                else:
+                    sizes.append(30.0)
+            if len(xs) > 0:
+                scat.set_offsets(np.c_[xs, ys])
+                scat.set_sizes(sizes)
+            else:
+                scat.set_offsets(np.empty((0, 2)))
+                scat.set_sizes([])
+            txt.set_text(f'frame {i}   omega≈{omegas[i]:.3f}°   peaks: {len(xs)}')
+            if annotate:
+                for x, y, p in zip(xs, ys, valid_peaks):
+                    sid = p.get('spot3d_id', None)
+                    if sid is not None:
+                        annots.append(ax.text(x+2, y+2, str(int(sid)), fontsize=6, color='r'))
+        else:
+            scat.set_offsets(np.empty((0, 2)))
+            scat.set_sizes([])
+            txt.set_text(f'frame {i}   omega≈{omegas[i]:.3f}°   peaks: 0')
+
+        #ax.set_xlim(-0.5, W-0.5)
+        #ax.set_ylim(H-0.5, -0.5)  # invert Y to match imshow
+        fig.canvas.draw_idle()
+
+    # Buttons: Prev / Next
+    ax_prev = plt.axes([0.78, 0.01, 0.06, 0.03])
+    ax_next = plt.axes([0.85, 0.01, 0.06, 0.03])
+    bprev = Button(ax_prev, '<')
+    bnext = Button(ax_next, '>')
+
+    def _next(event=None):
+        v = int(np.round(slider.val))
+        slider.set_val(min(N-1, v + 1))
+
+    def _prev(event=None):
+        v = int(np.round(slider.val))
+        slider.set_val(max(0, v - 1))
+
+    bnext.on_clicked(lambda ev: _next(ev))
+    bprev.on_clicked(lambda ev: _prev(ev))
+
+    # Keyboard navigation
+    def on_key(event):
+        if event.key in ('right', 'd', 'pagedown'):
+            _next()
+        elif event.key in ('left', 'a', 'pageup'):
+            _prev()
+
+    cid = fig.canvas.mpl_connect('key_press_event', on_key)
+
+    # Keep references alive (prevent garbage collection)
+    state = dict(fig=fig, ax=ax, im=im, scat=scat, txt=txt, annots=annots,
+                 slider=slider, buttons=(bprev, bnext), key_connid=cid,
+                 images=images, omegas=omegas, peaks_by_frame=peaks_by_frame)
+    # attach to figure object
+    fig._image_slider_state = state
+
+    # connect slider after state saved (just in case)
+    slider.on_changed(update)
+
+    # initial draw
+    update(0)
+    plt.show()
+    return state
+
+
+
+
+def _get_grain_orientation(orient_df, grain_id, preferred_axis='z'):
+    """
+    Return a dict with orientation info for a given grain_id.
+
+    orient_df is indexed by (grain_id, axis) with columns including
+    'phi1', 'PHI', 'phi2', and e.g. 'ub_hkl', 'euler_axisZ_uvw'.
+    """
+    try:
+        # try preferred axis first
+        row = orient_df.loc[(grain_id, preferred_axis)]
+    except KeyError:
+        # fallback: take first axis for this grain
+        try:
+            row = orient_df.xs(grain_id, level='grain_id').iloc[0]
+        except Exception:
+            return None
+
+    phi1 = float(row.get('phi1', np.nan))
+    PHI  = float(row.get('PHI', np.nan))
+    phi2 = float(row.get('phi2', np.nan))
+
+    # optional: some compact Miller notation for surface normal / main direction
+    ub_hkl   = row.get('ub_hkl', None)            # e.g. (1,0,0)
+    axisZ_uvw = row.get('euler_axisZ_uvw', None)  # e.g. (1,0,0)
+
+    def _fmt_triplet(val):
+        if isinstance(val, (tuple, list, np.ndarray)):
+            return tuple(int(x) for x in val)
+        # some of your values are like "np.int64(0)" in strings; handle that
+        try:
+            # seq = eval(str(val))
+            
+            from ast import literal_eval
+            seq = literal_eval(str(val))
+            if isinstance(seq, (tuple, list)):
+                return tuple(int(x) for x in seq)
+        except Exception:
+            pass
+        return None
+
+    ub_hkl_fmt   = _fmt_triplet(ub_hkl)
+    axisZ_uvw_fmt = _fmt_triplet(axisZ_uvw)
+
+    return dict(
+        phi1=phi1, PHI=PHI, phi2=phi2,
+        ub_hkl=ub_hkl_fmt,
+        axisZ_uvw=axisZ_uvw_fmt
+    )
+
+
+def grain_slider_on_max_image(max_image,
+                              refl_df,
+                              spot_df,
+                              orient_df=None,
+                              vmax=20,
+                              cmap='viridis',
+                              size_by='npix',
+                              origin='lower',
+                              annotate=True,
+                              max_labels=80,
+                              preferred_axis='z'):
+    """
+    Interactive viewer: slide over grain_id and show its reflections
+    on the max-pixel image, with orientation info in the title.
+
+    max_image  : 2D array (H,W)
+    refl_df    : DataFrame indexed by (grain_id, peak_id)
+    spot_df    : DataFrame indexed by peak_id with columns x, y, npix, avg_intensity
+    orient_df  : DataFrame indexed by (grain_id, axis) with orientation info
+    """
+
+    # --- list of available grains (sorted) ---
+    grain_ids = np.array(sorted(refl_df.index.get_level_values('grain_id').unique()))
+    n_grains = len(grain_ids)
+    if n_grains == 0:
+        raise ValueError("No grains in refl_df")
+
+    # --- base figure / max image ---
+    fig, ax = plt.subplots(figsize=(6, 6))
+    im = ax.imshow(max_image, cmap=cmap, vmax=vmax, origin=origin)
+
+    # empty scatter; will be filled in `update`
+    scat = ax.scatter([], [], s=30,
+                      facecolors='none', edgecolors='r', linewidths=0.6)
+
+    # per-point annotations
+    annots = []
+
+    # small text box at top with grain/orientation info
+    info_txt = ax.text(0.01, 0.99, '',
+                       transform=ax.transAxes,
+                       ha='left', va='top',
+                       fontsize=8,
+                       bbox=dict(fc='white', alpha=0.7, ec='none'))
+
+    ax.set_title("Max-pixel image with GrainSpotter peaks")
+
+    # --- helper to get merged table for one grain ---
+    def merged_for_grain(gid):
+        refl = refl_df.reset_index()
+        refl = refl[refl['grain_id'] == gid].copy()
+        m = refl.merge(spot_df.reset_index(), on='peak_id', how='inner')
+        return m
+
+    # --- slider over grain INDEX (0..n_grains-1) ---
+    ax_slider = plt.axes([0.15, 0.01, 0.55, 0.03])
+    slider = Slider(ax_slider, 'grain idx', 0, n_grains-1,
+                    valinit=0, valstep=1, valfmt='%0.0f')
+
+    # --- buttons for prev/next grain ---
+    ax_prev = plt.axes([0.73, 0.01, 0.06, 0.03])
+    ax_next = plt.axes([0.81, 0.01, 0.06, 0.03])
+    bprev = Button(ax_prev, '<')
+    bnext = Button(ax_next, '>')
+
+    def _set_grain_idx(new_idx):
+        new_idx = int(np.clip(new_idx, 0, n_grains-1))
+        slider.set_val(new_idx)
+
+    def _next(event=None):
+        _set_grain_idx(int(slider.val) + 1)
+
+    def _prev(event=None):
+        _set_grain_idx(int(slider.val) - 1)
+
+    bnext.on_clicked(lambda ev: _next(ev))
+    bprev.on_clicked(lambda ev: _prev(ev))
+
+    # keyboard shortcuts
+    def on_key(event):
+        if event.key in ('right', 'd', 'pagedown'):
+            _next()
+        elif event.key in ('left', 'a', 'pageup'):
+            _prev()
+
+    cid = fig.canvas.mpl_connect('key_press_event', on_key)
+
+    # --- update function ---
+    def update(val):
+        idx = int(np.round(val))
+        gid = int(grain_ids[idx])
+
+        m = merged_for_grain(gid)
+
+        xs = m['x'].to_numpy()
+        ys = m['y'].to_numpy()
+
+        # sizes
+        if size_by == 'npix':
+            base = m['npix'].fillna(0).to_numpy()
+            sizes = 10.0 + 2.0 * np.sqrt(base)
+        elif size_by == 'avg':
+            base = m['avg_intensity'].fillna(0).to_numpy()
+            sizes = 10.0 + 0.02 * base
+        else:
+            sizes = np.full_like(xs, 30.0, dtype=float)
+
+        scat.set_offsets(np.c_[xs, ys])
+        scat.set_sizes(sizes)
+
+        # remove old annotations
+        if annots:
+            for a in annots:
+                try:
+                    a.remove()
+                except Exception:
+                    pass
+            annots.clear()
+
+        # (hkl) labels
+        if annotate:
+            labels_drawn = 0
+            for _, row in m.iterrows():
+                if labels_drawn >= max_labels:
+                    break
+                h, k, l = row.get('h', np.nan), row.get('k', np.nan), row.get('l', np.nan)
+                try:
+                    lab = f"({int(h)}{int(k)}{int(l)})"
+                except Exception:
+                    continue
+                annots.append(
+                    ax.text(row['x']+2, row['y']+2, lab,
+                            fontsize=9, color='r')
+                )
+                labels_drawn += 1
+
+        # orientation info
+        orient_str = ""
+        if orient_df is not None:
+            ori = _get_grain_orientation(orient_df, gid, preferred_axis=preferred_axis)
+            if ori is not None:
+                phi1, PHI, phi2 = ori['phi1'], ori['PHI'], ori['phi2']
+                orient_str = f"φ1={phi1:6.2f}°, Φ={PHI:6.2f}°, φ2={phi2:6.2f}°"
+                if ori['ub_hkl'] is not None:
+                    hkl = ori['ub_hkl']
+                    orient_str += f"  n ≈ ({hkl[0]} {hkl[1]} {hkl[2]})"
+                elif ori['axisZ_uvw'] is not None:
+                    uvw = ori['axisZ_uvw']
+                    orient_str += f"  [uvw]_Z ≈ [{uvw[0]} {uvw[1]} {uvw[2]}]"
+
+        info_txt.set_text(f"grain {gid}  (index {idx+1}/{n_grains})\n{orient_str}")
+
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+
+    # initial draw
+    update(0)
+
+    # keep state to avoid garbage collection
+    state = dict(
+        fig=fig, ax=ax, im=im, scat=scat,
+        annots=annots, info_txt=info_txt,
+        slider=slider, bprev=bprev, bnext=bnext,
+        key_connid=cid,
+        grain_ids=grain_ids,
+        refl_df=refl_df,
+        spot_df=spot_df,
+        orient_df=orient_df
+    )
+    fig._grain_slider_state = state
+
+    plt.show()
+    return state
+
