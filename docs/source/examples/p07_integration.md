@@ -90,7 +90,7 @@ pixel_coord_plot = pixel_coord[
 ```python
 half_delta_r, _ = integration.get_delta_range(
     pixel_coord_plot,
-    gamma_pxl_range=data.shape[1],
+    gamma_pxl_range=gamma_pxl_range,
     sigma_factor=1,
 )
 

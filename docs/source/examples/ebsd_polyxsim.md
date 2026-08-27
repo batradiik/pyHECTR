@@ -1,6 +1,6 @@
 # EBSD-supported polycrystalline Nb and PolyXSim
 
-This page follows `EBSD_polyNb.ipynb`.
+This page follows `EBSD_polyNb_PolyXSim.ipynb`.
 
 ## 1. Load and rename EBSD columns
 
@@ -47,7 +47,7 @@ plot_axis_orientation_map_clickable(
 
 Repeat for X and Y when needed.
 
-## 4. Fit the EBSD-to-mm mapping
+## 4. Fit the EBSD to mm mapping
 
 The notebook shows both:
 
@@ -67,9 +67,9 @@ grain_ebsd = apply_affine(
 
 ## 6. Convert the physical footprint size to EBSD pixels
 
-The affine transform is sampled along the EBSD X/Y unit vectors to obtain millimetres per EBSD pixel. The physical grazing incidence footprint radius is divided by these values to obtain the ellipse semi-axes.
+The affine transform is sampled along the EBSD X/Y unit vectors to obtain millimetres per EBSD pixel. The physical grazing incidence footprint radius is divided by these values to obtain the ellipse semi axes.
 
-## 7. Select and re-index the footprint
+## 7. Select and reindex the footprint
 
 ```python
 df_roi = read_ebsd_region(
@@ -88,7 +88,7 @@ The supplied notebook then indexes this ROI with `maxZ=6`, optional cells compar
 
 ```python
 write_polyxsim_inp_from_ebsd(
-    "polyNb_from_ebsd_r_13_327.inp",
+    "polyNb_grain1_from_ebsd_r_13_327.inp",
     ...,
     region_df=df_roi,
     use_Gcols=True,

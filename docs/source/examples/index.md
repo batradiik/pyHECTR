@@ -1,13 +1,13 @@
 # Worked examples
 
-These pages follow the current notebooks and explain the purpose of the important
-cells without reproducing every exploratory plot or hard-coded beamline path.
+These pages follow the example notebooks and explain the purpose of the important cells.
 
 ```{toctree}
 :maxdepth: 2
 
 p07_preparation
 p07_integration
+grainspotter
 mask_nn
 ebsd_polyxsim
 surface_cells
