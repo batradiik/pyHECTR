@@ -12,6 +12,7 @@ All notable changes to `pyHECTR` will be documented in this file.
 - Added surface coordinate generation and related surface structure examples.
 - Added PolyXSim input and crystallographic structure example files.
 - Added manuals, API references, and workflow documentation.
+- Added documentation for the  Optuna automated ROD search.
 
 ### Changed
 
