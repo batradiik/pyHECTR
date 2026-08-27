@@ -209,30 +209,35 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 
 ### Core dependencies
 
+A standard installation includes:
+
 - NumPy
 - SciPy
 - Matplotlib
 - Pillow
 - ImageIO
-- OpenCV
+- ImageIO-FFmpeg
 - pandas
 - tqdm
+- OpenCV headless
 - xrayutilities
-- jupyterlab
+- JupyterLab
+- IPython kernel
 - ipympl
 
 ### Extras
 
+Installing `pyhectr[full]` additionally provides:
+
+- Numba
 - joblib
 - scikit-image
 - h5py
 - hdf5plugin
-- imageio-ffmpeg
 - yacs
 - pycocotools
 - fvcore
 - iopath
-- numba
 
 ---
 
