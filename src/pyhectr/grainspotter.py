@@ -581,7 +581,7 @@ def build_multigrain_table(log_path,
         Display component permutation passed to
         :func:`summarize_grain_axes`.
     a : float, default=3.3004
-        Cubic lattice parameter passed to :func:`summarize_grain_axes`.
+        Cubic lattice parameter passed to `summarize_grain_axes`.
 
     Returns
     -------
