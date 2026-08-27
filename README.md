@@ -170,37 +170,17 @@ If Detectron2 import fails after changing PyTorch, reinstall Detectron2 in the s
 
 ---
 
-## Package modules
+## Automated ROD structure search
 
-- `pyhectr.xrd_geom`  
-  Detector angle conversion, reciprocal space grids, UB matrices, HKL maps, CTR localization, and mask morphology.
+Automated surface structure fitting for ROD are available in the separate [ROD Optuna Search](https://github.com/batradiik/rod_structure_search) repository.
 
-- `pyhectr.integration`  
-  Background estimation, signal window estimation, correction maps, binary mask preparation, and rocking scan integration.
+The repository uses Optuna to select and optimize ROD refinement parameters and provides:
 
-- `pyhectr.read_plot`  
-  DESY P07 image and metadata loading, plotting utilities, interactive sliders, output folder creation, and uncertainty estimates.
+- a local Windows workflow using `rod.exe`;
+- a parallel Linux workflow using `rod_doublePrecision` and SLURM;
+- example Nb input files for `.bul`, `.fit`, `.par`, and `.dat` workflows;
+- restartable searches and storage of the best fitting result files.
 
-- `pyhectr.bragg_simulations`  
-  Theoretical reflection handling, peak plotting, symmetry handling, and azimuthal offset scans.
-
-- `pyhectr.theta0_finder`  
-  Conversion of detector pixels to fractional HKL coordinates.
-
-- `pyhectr.mask_nn`  
-  Optional Detectron2 / Mask R-CNN helper functions for detector space mask inference and prediction post processing.
-
-- `pyhectr.ebsd_map`  
-  EBSD orientation map utilities, footprint selection, and EBSD coordinate calibration.
-
-- `pyhectr.polycrystal`  
-  Utilities for assigning low index crystallographic directions to EBSD grain orientations.
-
-- `pyhectr.polyxsim`  
-  Helpers for writing PolyXSim input files from EBSD grain orientations.
-
-- `pyhectr.surface`  
-  Surface cell generation and writing of `.xtl` and `.bul` structure files.
 
 ---
 
