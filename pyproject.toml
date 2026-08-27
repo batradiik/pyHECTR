@@ -5,8 +5,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyhectr"
-version = "0.2.1"
-description = "Tools for high-energy crystal truncation rod reconstruction and integration from detector images."
+version = "0.2.2"
+description = "Tools for high energy crystal truncation rod reconstruction and integration from detector images."
 readme = "README.md"
 requires-python = ">=3.9,<3.13"
 license = "GPL-2.0-or-later"
@@ -24,12 +24,11 @@ dependencies = [
     "imageio>=2.30",
     "pandas>=1.5",
     "tqdm>=4.60",
-    "opencv-python-headless>=4.8,<5",
-    "xrayutilities>=1.7,<2",
+    "opencv-python-headless>=4.8,<4.12",
+    "xrayutilities>=1.7,<1.8",
     "jupyterlab>=4.2",
     "ipykernel>=6.29",
     "ipympl>=0.9",
-    "pathlib",
     "imageio-ffmpeg",
 ]
 

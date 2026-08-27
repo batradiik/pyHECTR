@@ -9,7 +9,7 @@ copyright = "2026, Radik Batraev"
 try:
     release = package_version("pyhectr")
 except PackageNotFoundError:
-    release = "0.2.1"
+    release = "0.2.2"
 
 version = release
 
