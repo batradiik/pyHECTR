@@ -9,6 +9,7 @@ The structure:
 
 - **Getting started** explains what the package does and how to install it.
 - **User manual** explains the scientific and data processing steps.
+- **Structure search** explains the Optuna search for the ROD surface structure fitting.
 - **Examples**  the supplied research notebooks.
 - **API reference** is generated from source docstrings.
 
@@ -49,6 +50,14 @@ examples/index
 ```
 
 ```{toctree}
+:maxdepth: 1
+:caption: ROD structure search
+:hidden:
+
+structure_search
+```
+
+```{toctree}
 :maxdepth: 2
 :caption: Reference
 :hidden:
@@ -57,11 +66,11 @@ api/index
 ```
 
 
-
-## First start
+## First steps
 
 1. Read [Installation](installation.md).
 2. Read [Data and coordinate conventions](manual/conventions.md).
 3. Run through [Quick start](quickstart.md).
-4. Choose the worked example closest to your experiment.
+4. Choose the [workflow example](examples/index.md) closest to your experiment.
+5. For automated ROD refinement, see [Automated ROD structure search](structure_search.md).
 
