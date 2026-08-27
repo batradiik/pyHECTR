@@ -2,6 +2,29 @@
 
 All notable changes to `pyHECTR` will be documented in this file.
 
+
+
+## [0.2.2]
+
+### Added
+
+- Added GrainSpotter utilities and a complete indexing example workflow.
+- Added surface coordinate generation and related surface structure examples.
+- Added PolyXSim input and crystallographic structure example files.
+- Added manuals, API references, and workflow documentation.
+
+### Changed
+
+- Updated EBSD, PolyXSim, Mask R-CNN, surface, and P07 example notebooks.
+- Improved surface, plotting, integration, I/O, and crystallographic utilities.
+
+### Fixed
+
+- Fixed use of `inverse_transpose` before its definition.
+- Fixed imports and performed general code cleanup.
+
+
+
 ## [0.2.1]
 
 ### Added
